@@ -33,6 +33,10 @@ static volatile bool has_timeout;
 static volatile bool kill_sw_active;
 static volatile uint32_t feed_counter[MAX_THREADS_MONITOR];
 
+
+
+void timeout_thread(void * arg);
+
 // Threads
 //static THD_WORKING_AREA(timeout_thread_wa, 256);
 //static THD_FUNCTION(timeout_thread, arg);
@@ -77,7 +81,14 @@ void timeout_init(void) {
 	/* Enable IWDG (the LSI oscillator will be enabled by hardware) */
 //	IWDG_Enable();
 
-//	chThdSleepMilliseconds(10);
+	vTaskDelay(MS_TO_TICKS(10));
+
+	static uint8_t task = 0;
+
+	if(task==0){
+		xTaskCreate(timeout_thread, "tskTout", 512, NULL, PRIO_NORMAL, NULL);
+		task = 1;
+	}
 
 //	chThdCreateStatic(timeout_thread_wa, sizeof(timeout_thread_wa), NORMALPRIO, timeout_thread, NULL);
 }
@@ -89,7 +100,7 @@ void timeout_configure(systime_t timeout, float brake_current, KILL_SW_MODE kill
 }
 
 void timeout_reset(void) {
-	//TODO last_update_time = chVTGetSystemTime();
+	last_update_time = xTaskGetTickCount();
 }
 
 bool timeout_has_timeout(void) {
@@ -97,8 +108,7 @@ bool timeout_has_timeout(void) {
 }
 
 float timeout_secs_since_update(void) {
-	//return UTILS_AGE_S(last_update_time);
-	return 0;
+	return UTILS_AGE_S(last_update_time);
 }
 
 bool timeout_kill_sw_active(void) {
@@ -185,84 +195,82 @@ bool timeout_had_IWDG_reset(void) {
 //	return false;
 }
 
-//static THD_FUNCTION(timeout_thread, arg) {
-//	(void)arg;
-//
-//	chRegSetThreadName("Timeout");
-//
-//	for(;;) {
-//		bool kill_sw = false;
-//
-//		switch (timeout_kill_sw_mode) {
-//		case KILL_SW_MODE_PPM_LOW:
-//			kill_sw = !palReadPad(HW_ICU_GPIO, HW_ICU_PIN);
-//			break;
-//
-//		case KILL_SW_MODE_PPM_HIGH:
-//			kill_sw = palReadPad(HW_ICU_GPIO, HW_ICU_PIN);
-//			break;
-//
-//		case KILL_SW_MODE_ADC2_LOW:
-//			kill_sw = ADC_VOLTS(ADC_IND_EXT2) < 1.65;
-//			break;
-//
-//		case KILL_SW_MODE_ADC2_HIGH:
-//			kill_sw = ADC_VOLTS(ADC_IND_EXT2) > 1.65;
-//			break;
-//
-//		default:
-//			break;
-//		}
-//
-//		if (kill_sw || (timeout_msec != 0 && chVTTimeElapsedSinceX(last_update_time) > MS2ST(timeout_msec))) {
-//			if (!has_timeout && !kill_sw_active) {
-//				mc_interface_release_motor_override();
-//			}
-//			mc_interface_unlock();
-//			mc_interface_select_motor_thread(1);
-//			mc_interface_set_brake_current(timeout_brake_current);
-//			mc_interface_select_motor_thread(2);
-//			mc_interface_set_brake_current(timeout_brake_current);
-//
-//			if (kill_sw) {
-//				mc_interface_ignore_input_both(20);
-//			} else {
-//				has_timeout = true;
-//			}
-//		} else {
-//			has_timeout = false;
-//		}
-//
-//		kill_sw_active = kill_sw;
-//
-//		bool threads_ok = true;
-//
-//		// Monitored threads (foc, can, timer) must report at least one iteration,
-//		// otherwise the watchdog won't be feed and MCU will reset. All threads should
-//		// be monitored
-//		if(feed_counter[THREAD_MCPWM] < MIN_THREAD_ITERATIONS) {
-//			threads_ok = false;
-//		}
-//
-//#if CAN_ENABLE
-//		if(feed_counter[THREAD_CANBUS] < MIN_THREAD_ITERATIONS) {
-//			threads_ok = false;
-//		}
-//#endif
-//
-//		for( int i = 0; i < MAX_THREADS_MONITOR; i++) {
-//			feed_counter[i] = 0;
-//		}
-//
-//		if (threads_ok == true) {
-//			// Feed WDT
-//			IWDG_ReloadCounter();	// must reload in <12ms
-//		} else {
-//			// not reloading the watchdog will produce a reset.
-//			// This can be checked from the GUI logs as
-//			// "FAULT_CODE_BOOTING_FROM_WATCHDOG_RESET"
-//		}
-//
-//		chThdSleepMilliseconds(10);
-//	}
-//}
+void timeout_thread(void * arg){
+	(void)arg;
+
+	for(;;) {
+		bool kill_sw = false;
+
+		switch (timeout_kill_sw_mode) {
+		case KILL_SW_MODE_PPM_LOW:
+			//kill_sw = !palReadPad(HW_ICU_GPIO, HW_ICU_PIN);
+			break;
+
+		case KILL_SW_MODE_PPM_HIGH:
+			//kill_sw = palReadPad(HW_ICU_GPIO, HW_ICU_PIN);
+			break;
+
+		case KILL_SW_MODE_ADC2_LOW:
+			//kill_sw = ADC_VOLTS(ADC_IND_EXT2) < 1.65;
+			break;
+
+		case KILL_SW_MODE_ADC2_HIGH:
+			//kill_sw = ADC_VOLTS(ADC_IND_EXT2) > 1.65;
+			break;
+
+		default:
+			break;
+		}
+
+		if (kill_sw || (timeout_msec != 0 && TimeElapsedSinceX(last_update_time) > MS_TO_TICKS(timeout_msec))) {
+			if (!has_timeout && !kill_sw_active) {
+				mc_interface_release_motor_override();
+			}
+			mc_interface_unlock();
+			mc_interface_select_motor_thread(1);
+			mc_interface_set_brake_current(timeout_brake_current);
+			mc_interface_select_motor_thread(2);
+			mc_interface_set_brake_current(timeout_brake_current);
+
+			if (kill_sw) {
+				mc_interface_ignore_input_both(20);
+			} else {
+				has_timeout = true;
+			}
+		} else {
+			has_timeout = false;
+		}
+
+		kill_sw_active = kill_sw;
+
+		bool threads_ok = true;
+
+		// Monitored threads (foc, can, timer) must report at least one iteration,
+		// otherwise the watchdog won't be feed and MCU will reset. All threads should
+		// be monitored
+		if(feed_counter[THREAD_MCPWM] < MIN_THREAD_ITERATIONS) {
+			threads_ok = false;
+		}
+
+#if CAN_ENABLE
+		if(feed_counter[THREAD_CANBUS] < MIN_THREAD_ITERATIONS) {
+			threads_ok = false;
+		}
+#endif
+
+		for( int i = 0; i < MAX_THREADS_MONITOR; i++) {
+			feed_counter[i] = 0;
+		}
+
+		if (threads_ok == true) {
+			// Feed WDT
+			//TODO IWDG_ReloadCounter();	// must reload in <12ms
+		} else {
+			// not reloading the watchdog will produce a reset.
+			// This can be checked from the GUI logs as
+			// "FAULT_CODE_BOOTING_FROM_WATCHDOG_RESET"
+		}
+
+		vTaskDelay(MS_TO_TICKS(10));
+	}
+}

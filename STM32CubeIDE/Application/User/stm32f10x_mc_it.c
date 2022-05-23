@@ -23,6 +23,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_ll_exti.h"
 #include "stm32f1xx_ll_adc.h"
+#include "stm32f1xx_ll_tim.h"
 /* USER CODE BEGIN Includes */
 #include "product.h"
 #include "task_cli.h"

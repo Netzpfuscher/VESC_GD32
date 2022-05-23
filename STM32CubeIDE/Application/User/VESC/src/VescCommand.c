@@ -65,27 +65,10 @@ void commands_printf(PACKET_STATE_t * phandle, const char* format, ...) {
 	va_end (arg);
 
 	if(len > 0) {
-		commands_send_packet((unsigned char*)send_buffer,
-				(len < 254) ? len + 1 : 255, phandle);
+		packet_send_packet((unsigned char*)send_buffer, (len < 254) ? len + 1 : 255, phandle);
 	}
 }
 
-
-
-/**
- * Send a packet using the set send function.
- *
- * @param data
- * The packet data.
- *
- * @param len
- * The data length.
- */
-void commands_send_packet(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle) {
-	if (send_func) {
-		send_func(data, len, phandle);
-	}
-}
 
 void commands_send_mcconf(COMM_PACKET_ID packet_id, mc_configuration *mcconf, PACKET_STATE_t * phandle) {
 	uint8_t * send_buffer = pvPortMalloc(512 + PACKET_HEADER);
@@ -97,7 +80,7 @@ void commands_send_mcconf(COMM_PACKET_ID packet_id, mc_configuration *mcconf, PA
 	uint8_t * buffer = send_buffer + PACKET_HEADER;
 	buffer[0] = packet_id;
 	int32_t len = confgenerator_serialize_mcconf(&buffer[1], mcconf);
-	commands_send_packet(send_buffer, len + 1, phandle);
+	packet_send_packet(send_buffer, len + 1, phandle);
 	vPortFree(send_buffer);
 }
 
@@ -111,7 +94,7 @@ void commands_send_appconf(COMM_PACKET_ID packet_id, app_configuration *appconf,
 	uint8_t * buffer = send_buffer + PACKET_HEADER;
 	buffer[0] = packet_id;
 	int32_t len = confgenerator_serialize_appconf(&buffer[1], appconf);
-	commands_send_packet(send_buffer, len + 1, phandle);
+	packet_send_packet(send_buffer, len + 1, phandle);
 	vPortFree(send_buffer);
 }
 
@@ -122,7 +105,7 @@ void commands_send_rotor_pos(PACKET_STATE_t * phandle, float rotor_pos) {
 	int32_t index = 0;
 	buffer[index++] = COMM_ROTOR_POSITION;
 	buffer_append_int32(buffer, (int32_t)(rotor_pos * 100000.0), &index);
-	commands_send_packet(send_buffer, index, phandle);
+	packet_send_packet(send_buffer, index, phandle);
 }
 
 void send_position(PACKET_STATE_t * phandle){
@@ -156,13 +139,12 @@ uint8_t VescToSTM_get_uid(uint8_t * ptr, uint8_t size){
 typedef struct __PACKET_COPY_t__ PACKET_COPY_t;
 
 struct __PACKET_COPY_t__{
-	void(*reply_func)(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle);
 	PACKET_STATE_t * phandle;
 	uint8_t * data;
 	uint32_t len;
 };
 
-PACKET_COPY_t * commands_alloc_packet_copy(unsigned char *data, unsigned int len, void(*reply_func)(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle), PACKET_STATE_t * phandle){
+PACKET_COPY_t * commands_alloc_packet_copy(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle){
 	PACKET_COPY_t * ret = pvPortMalloc(sizeof(PACKET_COPY_t));
 	if(ret == NULL) return NULL;
 	ret->len = len;
@@ -176,7 +158,6 @@ PACKET_COPY_t * commands_alloc_packet_copy(unsigned char *data, unsigned int len
 	}else{
 		ret->data=NULL;
 	}
-	ret->reply_func = reply_func;
 	ret->phandle = phandle;
 	return ret;
 }
@@ -186,8 +167,7 @@ void commands_free_packet_copy(PACKET_COPY_t * packet){
 	vPortFree(packet);
 }
 
-void commands_process_packet(unsigned char *data, unsigned int len,
-		void(*reply_func)(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle), PACKET_STATE_t * phandle) {
+void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle) {
 
 	if (!len) {
 		return;
@@ -200,13 +180,13 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 	len--;
 
 
-	send_func = reply_func;
+	//send_func = reply_func;
 
 	// Avoid calling invalid function pointer if it is null.
 	// commands_send_packet will make the check.
-	if (!reply_func) {
-		reply_func = commands_send_packet;
-	}
+//	if (!reply_func) {
+//		reply_func = commands_send_packet;
+//	}
 
 	switch (packet_id) {
 	case COMM_FW_VERSION: {
@@ -234,7 +214,8 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 
 		fw_version_sent_cnt++;
 
-		reply_func(send_buffer, ind, phandle);
+		packet_send_packet(send_buffer, ind, phandle);
+		packet_send_packet(send_buffer, ind, phandle);
 		} break;
 
 		case COMM_JUMP_TO_BOOTLOADER_ALL_CAN:
@@ -247,7 +228,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 			uint8_t * buffer = send_buffer + PACKET_HEADER;
 			buffer[ind++] = COMM_ERASE_NEW_APP;
 			buffer[ind++] = 1;
-			reply_func(send_buffer, ind, phandle);
+			packet_send_packet(send_buffer, ind, phandle);
 		} break;
 		case COMM_WRITE_NEW_APP_DATA_ALL_CAN_LZO:
 		case COMM_WRITE_NEW_APP_DATA_ALL_CAN:
@@ -260,7 +241,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 			buffer[ind++] = 1;
 			//buffer_append_uint32(send_buffer, new_app_offset, &ind);
 			buffer_append_uint32(buffer, 0, &ind);
-			reply_func(send_buffer, ind, phandle);
+			packet_send_packet(send_buffer, ind, phandle);
 		} break;
 
 		case COMM_GET_VALUES:
@@ -345,48 +326,48 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 			}
 			if (mask & ((uint32_t)1 << 21)) {
 				uint8_t status = 0;
-				//TODO status |= VescToSTM_get_timeout_state();
-				//status |= timeout_kill_sw_active() << 1;
+				status |= timeout_has_timeout();
+				status |= timeout_kill_sw_active() << 1;
 				buffer[ind++] = status;
 			}
 
-			reply_func(send_buffer, ind, phandle);
+			packet_send_packet(send_buffer, ind, phandle);
 		} break;
 
 			case COMM_SET_DUTY: {
 				int32_t ind = 0;
 				mc_interface_set_duty((float)buffer_get_int32(data, &ind) / 100000.0);
-				//TODO timeout_reset();
+				timeout_reset();
 			} break;
 
 			case COMM_SET_CURRENT: {
 				int32_t ind = 0;
 				mc_interface_set_current((float)buffer_get_int32(data, &ind) / 1000.0);
-				//TODO timeout_reset();
+				timeout_reset();
 			} break;
 
 			case COMM_SET_CURRENT_BRAKE: {
 				int32_t ind = 0;
 				mc_interface_set_brake_current((float)buffer_get_int32(data, &ind) / 1000.0);
-				//TODO timeout_reset();
+				timeout_reset();
 			} break;
 
 			case COMM_SET_RPM: {
 				int32_t ind = 0;
 				mc_interface_set_pid_speed((float)buffer_get_int32(data, &ind));
-				//TODO timeout_reset();
+				timeout_reset();
 			} break;
 
 			case COMM_SET_POS: {
 				int32_t ind = 0;
 				mc_interface_set_pid_pos((float)buffer_get_int32(data, &ind) / 1000000.0);
-				//TODO timeout_reset();
+				timeout_reset();
 			} break;
 
 			case COMM_SET_HANDBRAKE: {
 				int32_t ind = 0;
 				mc_interface_set_handbrake(buffer_get_float32(data, 1e3, &ind));
-				//TODO timeout_reset();
+				timeout_reset();
 			} break;
 
 			case COMM_SET_DETECT: {
@@ -424,7 +405,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 					uint8_t send_buffer[PACKET_SIZE(10)];
 					uint8_t * buffer = send_buffer + PACKET_HEADER;
 					buffer[ind++] = packet_id;
-					reply_func(send_buffer, ind, phandle);
+					packet_send_packet(send_buffer, ind, phandle);
 				} else {
 					//commands_printf("Warning: Could not set mcconf due to wrong signature");
 				}
@@ -433,7 +414,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 				uint8_t send_buffer[PACKET_SIZE(10)];
 				uint8_t * buffer = send_buffer + PACKET_HEADER;
 				buffer[ind++] = packet_id;
-				reply_func(send_buffer, ind, phandle);
+				packet_send_packet(send_buffer, ind, phandle);
 
 				mempools_free_mcconf(mcconf);
 				} break;
@@ -467,7 +448,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 						int32_t ind = 0;
 						uint8_t send_buffer[50];
 						send_buffer[ind++] = packet_id;
-						reply_func(send_buffer, ind, phandle);
+						packet_send_packet(send_buffer, ind, phandle);
 					} else {
 						commands_printf(phandle, "Warning: Could not set appconf due to wrong signature");
 					}
@@ -514,7 +495,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 
 				case COMM_ALIVE:
 					//SHUTDOWN_RESET();
-					//TODO VescToSTM_timeout_reset();
+					timeout_reset();
 					break;
 
 				case COMM_GET_DECODED_PPM: {
@@ -526,7 +507,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 					buffer_append_int32(buffer, 0, &ind);
 					//buffer_append_int32(send_buffer, (int32_t)(servodec_get_last_pulse_len(0) * 1000000.0), &ind);
 					buffer_append_int32(buffer, 0, &ind);
-					reply_func(send_buffer, ind, phandle);
+					packet_send_packet(send_buffer, ind, phandle);
 
 				} break;
 
@@ -543,7 +524,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 					buffer_append_int32(buffer, app_adc_get_decoded_level2() * 1000000.0, &ind);
 					//buffer_append_int32(send_buffer, (int32_t)(app_adc_get_voltage2() * 1000000.0), &ind);
 					buffer_append_int32(buffer, 0 * 1000000.0, &ind);
-					reply_func(send_buffer, ind, phandle);
+					packet_send_packet(send_buffer, ind, phandle);
 				} break;
 
 				case COMM_GET_DECODED_CHUK: {
@@ -552,7 +533,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 					uint8_t * buffer = send_buffer + PACKET_HEADER;
 					buffer[ind++] = COMM_GET_DECODED_CHUK;
 					buffer_append_int32(buffer, (int32_t)(0 * 1000000.0), &ind);
-					reply_func(send_buffer, ind, phandle);
+					packet_send_packet(send_buffer, ind, phandle);
 				} break;
 
 				case COMM_GET_DECODED_BALANCE: {
@@ -562,7 +543,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 					buffer[ind++] = COMM_GET_DECODED_BALANCE;
 					memset(buffer,0,36);
 					ind+=36;
-					reply_func(send_buffer, ind, phandle);
+					packet_send_packet(send_buffer, ind, phandle);
 				} break;
 
 				case COMM_FORWARD_CAN:
@@ -599,7 +580,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 					uint8_t * buffer = send_buffer + PACKET_HEADER;
 					buffer[ind++] = packet_id;
 					buffer[ind++] = NRF_PAIR_STARTED;
-					reply_func(send_buffer, ind, phandle);
+					packet_send_packet(send_buffer, ind, phandle);
 				} break;
 
 				case COMM_GPD_BUFFER_SIZE_LEFT: {
@@ -609,7 +590,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 					buffer[ind++] = COMM_GPD_BUFFER_SIZE_LEFT;
 					//buffer_append_int32(send_buffer, gpdrive_buffer_size_left(), &ind);
 					buffer_append_int32(buffer, 128, &ind);
-					reply_func(buffer, ind, phandle);
+					packet_send_packet(buffer, ind, phandle);
 				} break;
 				case COMM_GPD_SET_FSW:
 				case COMM_GPD_FILL_BUFFER:
@@ -715,7 +696,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 						buffer_append_uint32(buffer, xTaskGetTickCount()/2, &ind);
 					}
 
-					reply_func(send_buffer, ind, phandle);
+					packet_send_packet(send_buffer, ind, phandle);
 				    } break;
 
 				case COMM_SET_ODOMETER: {
@@ -789,7 +770,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 						uint8_t send_buffer[PACKET_SIZE(20)];
 						uint8_t * buffer = send_buffer + PACKET_HEADER;
 						buffer[ind++] = packet_id;
-						reply_func(send_buffer, ind, phandle);
+						packet_send_packet(send_buffer, ind, phandle);
 					}
 					mempools_free_mcconf(mcconf);
 
@@ -818,7 +799,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 					buffer_append_float32_auto(buffer, mcconf->si_gear_ratio, &ind);
 					buffer_append_float32_auto(buffer, mcconf->si_wheel_diameter, &ind);
 
-					reply_func(send_buffer, ind, phandle);
+					packet_send_packet(send_buffer, ind, phandle);
 					mempools_free_mcconf(mcconf);
 				} break;
 
@@ -835,7 +816,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 						uint8_t send_buffer[PACKET_SIZE(20)];
 						uint8_t * buffer = send_buffer + PACKET_HEADER;
 						buffer[ind++] = packet_id;
-						reply_func(send_buffer, ind, phandle);
+						packet_send_packet(send_buffer, ind, phandle);
 						//comm_can_send_buffer(255, data - 1, len + 1, 0);
 					}
 				}break;
@@ -862,7 +843,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 						}
 					}
 
-					reply_func(send_buffer, ind, phandle);
+					packet_send_packet(send_buffer, ind, phandle);
 				} break;
 
 				case COMM_ERASE_BOOTLOADER_ALL_CAN:
@@ -872,7 +853,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 					uint8_t * buffer = send_buffer + PACKET_HEADER;
 					buffer[ind++] = COMM_ERASE_BOOTLOADER;
 					buffer[ind++] = 1;
-					reply_func(send_buffer, ind, phandle);
+					packet_send_packet(send_buffer, ind, phandle);
 				} break;
 
 				case COMM_SET_CURRENT_REL: {
@@ -916,7 +897,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 					uint8_t send_buffer[PACKET_SIZE(20)];
 					uint8_t * buffer = send_buffer + PACKET_HEADER;
 					buffer[ind++] = packet_id;
-					reply_func(send_buffer, ind, phandle);
+					packet_send_packet(send_buffer, ind, phandle);
 				} break;
 
 				case COMM_SET_CAN_MODE: {
@@ -927,7 +908,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 						uint8_t send_buffer[PACKET_SIZE(20)];
 						uint8_t * buffer = send_buffer + PACKET_HEADER;
 						buffer[ind++] = packet_id;
-						reply_func(send_buffer, ind, phandle);
+						packet_send_packet(send_buffer, ind, phandle);
 					}
 				} break;
 
@@ -937,7 +918,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 				case COMM_BMS_RESET_COUNTERS:
 				case COMM_BMS_FORCE_BALANCE:
 				case COMM_BMS_ZERO_CURRENT_OFFSET: {
-					//bms_process_cmd(data - 1, len + 1, reply_func);
+					//bms_process_cmd(data - 1, len + 1);
 					break;
 				}
 
@@ -963,7 +944,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 				case COMM_BM_MAP_PINS_NRF5X:
 				case COMM_BM_MEM_READ:
 				case COMM_GET_IMU_CALIBRATION: {
-					PACKET_COPY_t * temp = commands_alloc_packet_copy(data, len, reply_func, phandle);
+					PACKET_COPY_t * temp = commands_alloc_packet_copy(data, len, phandle);
 					if(temp == NULL){
 						commands_printf(phandle, "Malloc failed blocking call)");
 					}else{
@@ -1027,7 +1008,7 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 		memcpy(send_buffer + ind, detect_hall_table, 8);
 		ind += 8;
 		send_buffer[ind++] = detect_hall_res;
-		packet->reply_func(buffer, ind, phandle);
+		packet_send_packet(buffer, ind, phandle);
 
 	} break;
 
@@ -1060,7 +1041,7 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 		buffer_append_float32(send_buffer, l, 1e3, &ind);
 		buffer_append_float32(send_buffer, ld_lq_diff, 1e3, &ind);
 
-		packet->reply_func(buffer, ind, phandle);
+		packet_send_packet(buffer, ind, phandle);
 
 		mempools_free_mcconf(mcconf);
 		mempools_free_mcconf(mcconf_old);
@@ -1101,7 +1082,7 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 			ind += 8;
 			send_buffer[ind++] = res ? 0 : 1;
 
-			packet->reply_func(buffer, ind, phandle);
+			packet_send_packet(buffer, ind, phandle);
 
 			mempools_free_mcconf(mcconf_old);
 		} else {
@@ -1110,7 +1091,7 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 			memset(send_buffer, 255, 8);
 			ind += 8;
 			send_buffer[ind++] = 0;
-			packet->reply_func(buffer, ind, phandle);
+			packet_send_packet(buffer, ind, phandle);
 		}
 
 		mempools_free_mcconf(mcconf);
@@ -1146,7 +1127,7 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 		ind = 0;
 		send_buffer[ind++] = COMM_DETECT_MOTOR_FLUX_LINKAGE_OPENLOOP;
 		buffer_append_float32(send_buffer, linkage, 1e7, &ind);
-		packet->reply_func(buffer, ind, phandle);
+		packet_send_packet(buffer, ind, phandle);
 	} break;
 
 	case COMM_DETECT_APPLY_ALL_FOC: {
@@ -1160,14 +1141,12 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 		float openloop_rpm = buffer_get_float32(data, 1e3, &ind);
 		float sl_erpm = buffer_get_float32(data, 1e3, &ind);
 
-//		int res = conf_general_detect_apply_all_foc_can(detect_can, max_power_loss,
-//				min_current_in, max_current_in, openloop_rpm, sl_erpm);
-		int res = 0;
+		int res = conf_general_detect_apply_all_foc_can(detect_can, max_power_loss, min_current_in, max_current_in, openloop_rpm, sl_erpm, phandle);
 
 		ind = 0;
 		send_buffer[ind++] = COMM_DETECT_APPLY_ALL_FOC;
 		buffer_append_int16(send_buffer, res, &ind);
-		packet->reply_func(buffer, ind, phandle);
+		packet_send_packet(buffer, ind, phandle);
 	} break;
 
 	case COMM_TERMINAL_CMD:
@@ -1183,7 +1162,7 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 		int32_t ind = 0;
 		send_buffer[ind++] = COMM_PING_CAN;
 		//buffer[ind++] = 0; Add one byte for each detected
-		packet->reply_func(buffer, ind, phandle);
+		packet_send_packet(buffer, ind, phandle);
 	} break;
 
 #if HAS_BLACKMAGIC

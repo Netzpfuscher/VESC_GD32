@@ -26,6 +26,7 @@
 #include "task_pwr.h"
 #include "product.h"
 #include "app.h"
+#include "timeout.h"
 
 unsigned long getRunTimeCounterValue(void){
 	return HAL_GetTick();
@@ -49,4 +50,7 @@ void task_init(){
 	task_cli_init(&main_uart);
 	task_LED_init(&main_uart);  //Bring up the blinky
 	task_PWR_init(&main_uart);  //Manage power button
+
+	timeout_init();
+	timeout_configure(appconf.timeout_msec, appconf.timeout_brake_current, appconf.kill_sw_mode);
 }

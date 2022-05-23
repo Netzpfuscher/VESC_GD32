@@ -270,48 +270,48 @@ void mcpwm_foc_init(mc_configuration *conf_m1, mc_configuration *conf_m2) {
 	//LL_ADC_EnableIT_JEOS( ADC1 );
 
 	if (m_motor_1.m_conf->foc_offsets_cal_on_boot) {
-//			systime_t cal_start_time = chVTGetSystemTimeX();
-//			float cal_start_timeout = 10.0;
-//
-//			// Wait for input voltage to rise above minimum voltage
-//			while (mc_interface_get_input_voltage_filtered() < m_motor_1.m_conf->l_min_vin) {
-//				chThdSleepMilliseconds(1);
-//				if (UTILS_AGE_S(cal_start_time) >= cal_start_timeout) {
-//					m_dccal_done = true;
-//					break;
-//				}
-//			}
+			systime_t cal_start_time = xTaskGetTickCount();
+			float cal_start_timeout = 10.0;
+
+			// Wait for input voltage to rise above minimum voltage
+			while (mc_interface_get_input_voltage_filtered() < m_motor_1.m_conf->l_min_vin) {
+				vTaskDelay(MS_TO_TICKS(1));
+				if (UTILS_AGE_S(cal_start_time) >= cal_start_timeout) {
+					m_dccal_done = true;
+					break;
+				}
+			}
 
 			// Wait for input voltage to settle
-//			if (!m_dccal_done) {
-//				float v_in_last = mc_interface_get_input_voltage_filtered();
-//				systime_t v_in_stable_time = chVTGetSystemTimeX();
-//				while (UTILS_AGE_S(v_in_stable_time) < 2.0) {
-//					chThdSleepMilliseconds(1);
-//
-//					float v_in_now = mc_interface_get_input_voltage_filtered();
-//					if (fabsf(v_in_now - v_in_last) > 1.5) {
-//						v_in_last = v_in_now;
-//						v_in_stable_time = chVTGetSystemTimeX();
-//					}
-//
-//					if (UTILS_AGE_S(cal_start_time) >= cal_start_timeout) {
-//						m_dccal_done = true;
-//						break;
-//					}
-//				}
-//			}
+			if (!m_dccal_done) {
+				float v_in_last = mc_interface_get_input_voltage_filtered();
+				systime_t v_in_stable_time = xTaskGetTickCount();
+				while (UTILS_AGE_S(v_in_stable_time) < 2.0) {
+					vTaskDelay(MS_TO_TICKS(1));
 
-//			// Wait for fault codes to go away
-//			if (!m_dccal_done) {
-//				while (mc_interface_get_fault() != FAULT_CODE_NONE) {
-//					chThdSleepMilliseconds(1);
-//					if (UTILS_AGE_S(cal_start_time) >= cal_start_timeout) {
-//						m_dccal_done = true;
-//						break;
-//					}
-//				}
-//			}
+					float v_in_now = mc_interface_get_input_voltage_filtered();
+					if (fabsf(v_in_now - v_in_last) > 1.5) {
+						v_in_last = v_in_now;
+						v_in_stable_time = xTaskGetTickCount();
+					}
+
+					if (UTILS_AGE_S(cal_start_time) >= cal_start_timeout) {
+						m_dccal_done = true;
+						break;
+					}
+				}
+			}
+
+			// Wait for fault codes to go away
+			if (!m_dccal_done) {
+				while (mc_interface_get_fault() != FAULT_CODE_NONE) {
+					vTaskDelay(MS_TO_TICKS(1));
+					if (UTILS_AGE_S(cal_start_time) >= cal_start_timeout) {
+						m_dccal_done = true;
+						break;
+					}
+				}
+			}
 		vTaskDelay(MS_TO_TICKS(1000));
 
 			if (!m_dccal_done) {

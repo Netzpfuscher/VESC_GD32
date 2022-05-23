@@ -50,12 +50,12 @@ void putbuffer(unsigned char *buf, unsigned int len, port_str * port){
 	xSemaphoreGive(port->tx_semaphore);
 }
 
-void comm_uart_send_packet(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle) {
-	packet_send_packet(data, len, phandle);
-}
+//void comm_uart_send_packet(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle) {
+//	packet_send_packet(data, len, phandle);
+//}
 
 void process_packet(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle){
-	commands_process_packet(data, len, &comm_uart_send_packet, phandle);
+	commands_process_packet(data, len, phandle);
 }
 
 static uint32_t uart_get_write_pos(port_str * port){

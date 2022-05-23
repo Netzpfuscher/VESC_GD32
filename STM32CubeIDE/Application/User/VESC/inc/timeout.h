@@ -24,6 +24,8 @@
 //#include "chtypes.h"
 //#include "chsystypes.h"
 #include "datatypes.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 #define MAX_THREADS_MONITOR		10
 #define MIN_THREAD_ITERATIONS	1
@@ -49,5 +51,11 @@ bool timeout_had_IWDG_reset(void);
 void timeout_feed_WDT(uint8_t index);
 float timeout_get_brake_current(void);
 KILL_SW_MODE timeout_get_kill_sw_mode(void);
+
+static inline systime_t TimeElapsedSinceX(systime_t start) {
+  return xTaskGetTickCount() - start;
+}
+
+#define UTILS_AGE_S(x)		((float)TimeElapsedSinceX(x) / (float)configTICK_RATE_HZ)
 
 #endif /* TIMEOUT_H_ */

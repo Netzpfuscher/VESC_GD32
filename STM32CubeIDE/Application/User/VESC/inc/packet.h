@@ -46,6 +46,7 @@ struct __PACKET_STATE_t__{
 	volatile unsigned short rx_timeout;
 	void(*send_func)(unsigned char *data, unsigned int len, port_str* port);
 	void(*process_func)(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle);
+	void(*reply_func)(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle);
 	unsigned int rx_read_ptr;
 	unsigned int rx_write_ptr;
 	int bytes_left;

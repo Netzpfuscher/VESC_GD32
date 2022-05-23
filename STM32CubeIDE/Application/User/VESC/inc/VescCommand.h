@@ -27,11 +27,12 @@
 #include "packet.h"
 
 void commands_send_mcconf(COMM_PACKET_ID packet_id, mc_configuration *mcconf, PACKET_STATE_t * phandle);
-void commands_process_packet(unsigned char *data, unsigned int len, void(*reply_func)(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle), PACKET_STATE_t * phandle);
+void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle);
 void commands_send_packet(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle);
 void send_sample();
 void send_position(PACKET_STATE_t * phandle);
 void commands_printf(PACKET_STATE_t * phandle, const char* format, ...);
+void commands_send_appconf(COMM_PACKET_ID packet_id, app_configuration *appconf, PACKET_STATE_t * phandle);
 
 typedef enum {
 	SAMP_IDLE,

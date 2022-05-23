@@ -35,8 +35,225 @@
 #include <string.h>
 #include "main.h"
 #include "mcpwm_foc.h"
+#include "mempools.h"
+#include "timeout.h"
 
 app_configuration appconf;
+
+int conf_general_autodetect_apply_sensors_foc(float current,
+		bool store_mcconf_on_success, bool send_mcconf_on_success) {
+	int result = -1;
+
+	mc_configuration *mcconf = mempools_alloc_mcconf();
+	mc_configuration *mcconf_old = mempools_alloc_mcconf();
+
+	*mcconf = *mc_interface_get_configuration();
+	*mcconf_old = *mcconf;
+
+	mcconf->motor_type = MOTOR_TYPE_FOC;
+	mcconf->foc_sensor_mode = FOC_SENSOR_MODE_SENSORLESS;
+	mcconf->foc_current_kp = 0.0005;
+	mcconf->foc_current_ki = 1.0;
+	mc_interface_set_configuration(mcconf);
+
+	// Wait maximum 5s for fault code to disappear
+	for (int i = 0;i < 500;i++) {
+		if (mc_interface_get_fault() == FAULT_CODE_NONE) {
+			break;
+		}
+		vTaskDelay(MS_TO_TICKS(10));
+	}
+
+	if (mc_interface_get_fault() != FAULT_CODE_NONE) {
+		mc_interface_set_configuration(mcconf_old);
+		mempools_free_mcconf(mcconf);
+		mempools_free_mcconf(mcconf_old);
+		return -1;
+	}
+
+	// Wait one second for things to get ready after
+	// the fault disappears.
+	vTaskDelay(MS_TO_TICKS(1000));
+
+	// Disable timeout
+	systime_t tout = timeout_get_timeout_msec();
+	float tout_c = timeout_get_brake_current();
+	KILL_SW_MODE tout_ksw = timeout_get_kill_sw_mode();
+	timeout_reset();
+	timeout_configure(60000, 0.0, KILL_SW_MODE_DISABLED);
+
+	mc_interface_lock();
+
+	// Hall sensors
+	mcconf->m_sensor_port_mode = SENSOR_PORT_MODE_HALL;
+	mc_interface_set_configuration(mcconf);
+
+	uint8_t hall_table[8];
+	bool res = mcpwm_foc_hall_detect(current, hall_table);
+
+	// Lock again, as hall detection will undo the lock
+	mc_interface_lock();
+
+	if (res) {
+		mcconf_old->m_sensor_port_mode = SENSOR_PORT_MODE_HALL;
+		mcconf_old->foc_sensor_mode = FOC_SENSOR_MODE_HALL;
+		for (int i = 0;i < 8;i++) {
+			mcconf_old->foc_hall_table[i] = hall_table[i];
+		}
+
+		result = 1;
+	}
+
+	// Sensorless
+	if (!res) {
+		mcconf_old->foc_sensor_mode = FOC_SENSOR_MODE_SENSORLESS;
+		result = 0;
+		res = true;
+	}
+
+	timeout_configure(tout, tout_c, tout_ksw);
+	mc_interface_unlock();
+	mc_interface_release_motor();
+	mc_interface_wait_for_motor_release(1.0);
+	mc_interface_set_configuration(mcconf_old);
+
+	// On success store the mc configuration, also send it to VESC Tool.
+	if (res) {
+		if (store_mcconf_on_success) {
+			conf_general_store_mc_configuration(mcconf_old,
+					mc_interface_get_motor_thread() == 2);
+		}
+
+		if (send_mcconf_on_success) {
+			commands_send_mcconf(COMM_GET_MCCONF, mcconf_old, 0);
+		}
+	}
+
+	mempools_free_mcconf(mcconf);
+	mempools_free_mcconf(mcconf_old);
+
+	return result;
+}
+
+void conf_general_calc_apply_foc_cc_kp_ki_gain(mc_configuration *mcconf, float tc) {
+	float r = mcconf->foc_motor_r;
+	float l = mcconf->foc_motor_l;
+	float lambda = mcconf->foc_motor_flux_linkage;
+
+	float bw = 1.0 / (tc * 1e-6);
+	float kp = l * bw;
+	float ki = r * bw;
+	float gain = 1.0e-3 / SQ(lambda);
+//	float gain = (0.00001 / r) / SQ(lambda); // Old method
+
+	mcconf->foc_current_kp = kp;
+	mcconf->foc_current_ki = ki;
+	mcconf->foc_observer_gain = gain * 1e6;
+}
+
+static bool measure_r_l_imax(float current_min, float current_max,
+		float max_power_loss, float *r, float *l, float *ld_lq_diff, float *i_max) {
+	float current_start = current_max / 50;
+	if (current_start < (current_min * 1.1)) {
+		current_start = current_min * 1.1;
+	}
+
+	mc_configuration *mcconf = mempools_alloc_mcconf();
+	*mcconf = *mc_interface_get_configuration();
+
+	const float res_old = mcconf->foc_motor_r;
+
+	float i_last = 0.0;
+	for (float i = current_start;i < current_max;i *= 1.5) {
+		float res_tmp = mcpwm_foc_measure_resistance(i, 5, false);
+		i_last = i;
+
+		if (res_tmp == 0.0) {
+			mempools_free_mcconf(mcconf);
+			return false;
+		}
+
+		if ((i * i * res_tmp * 1.5) >= (max_power_loss / 5.0)) {
+			break;
+		}
+	}
+
+	*r = mcpwm_foc_measure_resistance(i_last, 100, true);
+	if (*r == 0.0) {
+		mempools_free_mcconf(mcconf);
+		return false;
+	}
+
+	mcconf->foc_motor_r = *r;
+	mc_interface_set_configuration(mcconf);
+
+	bool result = true;
+	*l = mcpwm_foc_measure_inductance_current(i_last, 100, 0, ld_lq_diff) * 1e-6;
+	if (*l == 0.0) {
+		result = false;
+	}
+
+	*ld_lq_diff *= 1e-6;
+	*i_max = sqrtf(max_power_loss / *r / 1.5);
+	utils_truncate_number(i_max, HW_LIM_CURRENT);
+
+	mcconf->foc_motor_r = res_old;
+	mc_interface_set_configuration(mcconf);
+	mempools_free_mcconf(mcconf);
+
+	return result;
+}
+
+static bool wait_fault(int timeout_ms) {
+	int motor_last = mc_interface_get_motor_thread();
+
+	for (int i = 0;i < (timeout_ms / 10);i++) {
+		mc_interface_select_motor_thread(1);
+		mc_fault_code fault1 = mc_interface_get_fault();
+		mc_interface_select_motor_thread(2);
+		mc_fault_code fault2 = mc_interface_get_fault();
+
+		if (fault1 == FAULT_CODE_NONE && fault2 == FAULT_CODE_NONE) {
+			break;
+		}
+
+		vTaskDelay(MS_TO_TICKS(10));
+	}
+
+	mc_interface_select_motor_thread(1);
+	mc_fault_code fault1 = mc_interface_get_fault();
+	mc_interface_select_motor_thread(2);
+	mc_fault_code fault2 = mc_interface_get_fault();
+
+	mc_interface_select_motor_thread(motor_last);
+
+	return fault1 == FAULT_CODE_NONE && fault2 == FAULT_CODE_NONE;
+}
+
+static bool wait_motor_stop(int timeout_ms) {
+	int motor_last = mc_interface_get_motor_thread();
+
+	for (int i = 0;i < (timeout_ms / 10);i++) {
+		mc_interface_select_motor_thread(1);
+		float rpm1 = mc_interface_get_rpm();
+		mc_interface_select_motor_thread(2);
+		float rpm2 = mc_interface_get_rpm();
+
+		if (fabsf(rpm1) < 100.0 && fabsf(rpm2) < 100.0) {
+			break;
+		}
+		vTaskDelay(MS_TO_TICKS(10));
+	}
+
+	mc_interface_select_motor_thread(1);
+	float rpm1 = mc_interface_get_rpm();
+	mc_interface_select_motor_thread(2);
+	float rpm2 = mc_interface_get_rpm();
+
+	mc_interface_select_motor_thread(motor_last);
+
+	return fabsf(rpm1) < 100.0 && fabsf(rpm2) < 100.0;
+}
 
 void conf_general_init(void) {
 	conf_general_read_app_configuration(&appconf);
@@ -422,7 +639,7 @@ bool conf_general_measure_flux_linkage_openloop(float current, float duty,
 			iq_avg += mcpwm_foc_get_iq();
 			id_avg += mcpwm_foc_get_id();
 			samples2 += 1.0;
-			vTaskDelay(MS_TO_TICKS(1));
+			vTaskDelay(1);
 		}
 
 		vq_avg /= samples2;
@@ -497,4 +714,252 @@ bool conf_general_measure_flux_linkage_openloop(float current, float duty,
 	vPortFree(mcconf);
 	vPortFree(mcconf_old);
 	return result;
+}
+
+/**
+ * Detect and apply all parameters, current limits and sensors. This is done for
+ * both motors on dual controllers.
+ *
+ * @param max_power_loss
+ * The maximum power loss to derive current limits, as well as detection currents, from.
+ *
+ * @param store_mcconf_on_success
+ * Store motor configuration in emulated EEPROM if the detection succeeds.
+ *
+ * @param send_mcconf_on_success
+ * Send motor configuration if the detection succeeds.
+ *
+ * @return
+ * >=0: Success, see conf_general_autodetect_apply_sensors_foc codes
+ * -10: Flux linkage detection failed
+ *  -x: see conf_general_autodetect_apply_sensors_foc faults
+ */
+int conf_general_detect_apply_all_foc(float max_power_loss,
+		bool store_mcconf_on_success, bool send_mcconf_on_success) {
+	int result = -1;
+
+	int motor_last = mc_interface_get_motor_thread();
+	mc_interface_select_motor_thread(1);
+
+	mc_configuration *mcconf = mempools_alloc_mcconf();
+	mc_configuration *mcconf_old = mempools_alloc_mcconf();
+
+	*mcconf = *mc_interface_get_configuration();
+	*mcconf_old = *mcconf;
+
+
+	mcconf->motor_type = MOTOR_TYPE_FOC;
+	mcconf->foc_sensor_mode = FOC_SENSOR_MODE_SENSORLESS;
+	mcconf->foc_f_zv = 10000.0; // Lower f_zv => less dead-time distortion
+	mcconf->foc_current_kp = 0.0005;
+	mcconf->foc_current_ki = 1.0;
+	mcconf->l_current_max = MCCONF_L_CURRENT_MAX;
+	mcconf->l_current_min = MCCONF_L_CURRENT_MIN;
+	mcconf->l_current_max_scale = MCCONF_L_CURRENT_MAX_SCALE;
+	mcconf->l_current_min_scale = MCCONF_L_CURRENT_MIN_SCALE;
+	mcconf->l_watt_max = MCCONF_L_WATT_MAX;
+	mcconf->l_watt_min = MCCONF_L_WATT_MIN;
+	mcconf->l_max_erpm = MCCONF_L_RPM_MAX;
+	mcconf->l_min_erpm = MCCONF_L_RPM_MIN;
+	mc_interface_set_configuration(mcconf);
+
+
+	// Wait maximum 5s for fault code to disappear
+	if (!wait_fault(5000)) {
+		mc_interface_set_configuration(mcconf_old);
+		mempools_free_mcconf(mcconf);
+		mempools_free_mcconf(mcconf_old);
+		mc_interface_select_motor_thread(motor_last);
+		return -1;
+	}
+
+	// Wait one second for things to get ready after
+	// the fault disappears.
+	vTaskDelay(MS_TO_TICKS(1000));
+
+	// Disable timeout
+	systime_t tout = timeout_get_timeout_msec();
+	float tout_c = timeout_get_brake_current();
+	KILL_SW_MODE tout_ksw = timeout_get_kill_sw_mode();
+	timeout_reset();
+	timeout_configure(60000, 0.0, KILL_SW_MODE_DISABLED);
+
+	mc_interface_lock();
+
+
+	float r = 0.0;
+	float l = 0.0;
+	float ld_lq_diff;
+	float i_max = 0.0;
+	bool res_r_l_imax_m1 = measure_r_l_imax(mcconf->cc_min_current, mcconf->l_current_max, max_power_loss, &r, &l, &ld_lq_diff, &i_max);
+
+	bool res_r_l_imax_m2 = true;
+
+	if (!res_r_l_imax_m1 || !res_r_l_imax_m2) {
+		timeout_configure(tout, tout_c, tout_ksw);
+		mc_interface_unlock();
+		mc_interface_release_motor();
+		mc_interface_wait_for_motor_release(1.0);
+		mc_interface_set_configuration(mcconf_old);
+		mempools_free_mcconf(mcconf);
+		mempools_free_mcconf(mcconf_old);
+		mc_interface_select_motor_thread(motor_last);
+		return -11;
+	}
+
+	// Increase switching frequency for flux linkage measurement
+	// as dead-time distortion has less effect at higher modulation.
+	// Having a smooth rotation is more important.
+	mcconf->foc_f_zv = 20000.0;
+	mc_interface_set_configuration(mcconf);
+
+
+	float lambda = 0.0;
+	float lambda_undriven = 0.0;
+	float lambda_undriven_samples = 0.0;
+	int res = conf_general_measure_flux_linkage_openloop(i_max / 2.5, 0.3, 1800, r, l,
+			&lambda, &lambda_undriven, &lambda_undriven_samples);
+
+	if (lambda_undriven_samples > 60) {
+		lambda = lambda_undriven;
+	}
+
+	bool res_linkage_m2 = true;
+
+	if (res && res_linkage_m2) {
+		mcconf_old->l_current_max = i_max;
+		mcconf_old->l_current_min = -i_max;
+		mcconf_old->motor_type = MOTOR_TYPE_FOC;
+		mcconf_old->foc_motor_r = r;
+		mcconf_old->foc_motor_l = l;
+		mcconf_old->foc_motor_ld_lq_diff = ld_lq_diff;
+		mcconf_old->foc_motor_flux_linkage = lambda;
+
+		if (mc_interface_temp_motor_filtered() > -10) {
+			mcconf_old->foc_temp_comp_base_temp = mc_interface_temp_motor_filtered();
+#ifdef HW_HAS_PHASE_FILTERS
+			mcconf_old->foc_temp_comp = true;
+#endif
+		}
+
+		conf_general_calc_apply_foc_cc_kp_ki_gain(mcconf_old, 1000);
+		mc_interface_set_configuration(mcconf_old);
+
+		wait_motor_stop(10000);
+
+
+		// This will also store the settings to emulated eeprom and send them to vesc tool
+		result = conf_general_autodetect_apply_sensors_foc(i_max / 3.0,
+				store_mcconf_on_success, send_mcconf_on_success);
+
+		int res_sensors_m2 = 0;
+
+		if (res_sensors_m2 < 0) {
+			result = res_sensors_m2;
+		}
+	} else {
+		result = -10;
+	}
+
+	timeout_configure(tout, tout_c, tout_ksw);
+	mc_interface_lock_override_once();
+	mc_interface_release_motor();
+	mc_interface_wait_for_motor_release(1.0);
+	mc_interface_unlock();
+
+	if (result < 0) {
+		mc_interface_set_configuration(mcconf_old);
+	}
+
+
+	mempools_free_mcconf(mcconf);
+	mempools_free_mcconf(mcconf_old);
+
+	mc_interface_select_motor_thread(motor_last);
+
+	return result;
+}
+
+/**
+ * Same as conf_general_detect_apply_all_foc, but also start detection on VESCs found on the CAN-bus.
+ *
+ * @param detect_can
+ * Run detection on VESCs found on the CAN-bus as well. Setting this to false makes
+ * this function behave like conf_general_detect_apply_all_foc, with the convenience
+ * of also applying the settings.
+ *
+ * @param max_power_loss
+ * The maximum power loss to derive current limits, as well as detection currents, from.
+ *
+ * @param min_current_in
+ * Minimum input current (negative value). 0 means leave it unchanged.
+ *
+ * @param max_current_in
+ * MAximum input current. 0 means leave it unchanged.
+ *
+ * @param openloop_rpm
+ * FOC openloop ERPM in sensorless mode. 0 means leave it unchanged.
+ *
+ * @param sl_erpm
+ * FOC ERPM above which sensorless should be used in sensored modes. 0 means leave it unchanged.
+ *
+ * @return
+ * Same as conf_general_detect_apply_all_foc, and
+ * -50: CAN detection timed out
+ * -51: CAN detection failed
+ */
+int conf_general_detect_apply_all_foc_can(bool detect_can, float max_power_loss,
+		float min_current_in, float max_current_in, float openloop_rpm, float sl_erpm, PACKET_STATE_t * phandle) {
+
+	int motor_last = mc_interface_get_motor_thread();
+	mc_interface_select_motor_thread(1);
+
+	mc_configuration *mcconf = mempools_alloc_mcconf();
+	*mcconf = *mc_interface_get_configuration();
+
+
+	if (fabsf(min_current_in) > 0.001) {
+		mcconf->l_in_current_min = min_current_in;
+	} else {
+		mcconf->l_in_current_min = MCCONF_L_IN_CURRENT_MIN;
+	}
+
+	if (fabsf(max_current_in) > 0.001) {
+		mcconf->l_in_current_max = max_current_in;
+	} else {
+		mcconf->l_in_current_max = MCCONF_L_IN_CURRENT_MAX;
+	}
+
+	if (fabsf(openloop_rpm) > 0.001) {
+		mcconf->foc_openloop_rpm = openloop_rpm;
+	} else {
+		mcconf->foc_openloop_rpm = MCCONF_FOC_OPENLOOP_RPM;
+	}
+
+	if (fabsf(sl_erpm) > 0.001) {
+		mcconf->foc_sl_erpm = sl_erpm;
+	} else {
+		mcconf->foc_sl_erpm = MCCONF_FOC_SL_ERPM;
+	}
+
+	mc_interface_set_configuration(mcconf);
+
+
+	int res = conf_general_detect_apply_all_foc(max_power_loss, false, false);
+
+	// Store and send settings
+	if (res >= 0) {
+
+		*mcconf = *mc_interface_get_configuration();
+		conf_general_store_mc_configuration(mcconf, mc_interface_get_motor_thread() == 2);
+
+		commands_send_mcconf(COMM_GET_MCCONF, mcconf, phandle);
+		vTaskDelay(MS_TO_TICKS(1000));
+	}
+
+	mempools_free_mcconf(mcconf);
+
+	mc_interface_select_motor_thread(motor_last);
+
+	return res;
 }
