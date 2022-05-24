@@ -37,6 +37,8 @@
 #include "crc.h"
 #include "firmware_metadata.h"
 
+#include "FreeRTOS.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -58,6 +60,37 @@ static volatile fault_data fault_vec[FAULT_VEC_LEN];
 static volatile int fault_vec_write = 0;
 static terminal_callback_struct callbacks[CALLBACK_LEN];
 static int callback_write = 0;
+
+
+void terminal_top(PACKET_STATE_t * phandle){
+    TaskStatus_t * taskStats;
+    uint32_t taskCount = uxTaskGetNumberOfTasks();
+    uint32_t sysTime;
+
+    taskStats = pvPortMalloc( taskCount * sizeof( TaskStatus_t ) );
+    if(taskStats){
+        taskCount = uxTaskGetSystemState(taskStats, taskCount, &sysTime);
+
+        commands_printf(phandle, "Task info:");
+
+
+        commands_printf(phandle, "FOC ms: %f ", mcpwm_foc_get_last_adc_isr_duration());
+
+        commands_printf(phandle, "Tasks: %d",  taskCount);
+
+        uint32_t heapRemaining = xPortGetFreeHeapSize();
+        commands_printf(phandle, "Mem: %db Free: %db Used: %db (%d%%)", configTOTAL_HEAP_SIZE, heapRemaining, configTOTAL_HEAP_SIZE - heapRemaining, ((configTOTAL_HEAP_SIZE - heapRemaining) * 100) / configTOTAL_HEAP_SIZE);
+
+        uint32_t currTask = 0;
+        for(;currTask < taskCount; currTask++){
+			char name[configMAX_TASK_NAME_LEN+1];
+			strncpy(name, taskStats[currTask].pcTaskName, configMAX_TASK_NAME_LEN);
+			commands_printf(phandle, "%d Name: %s State: %s Runtime: %d Stack free: %d", taskStats[currTask].xTaskNumber, name, SYS_getTaskStateString(taskStats[currTask].eCurrentState), taskStats[currTask].ulRunTimeCounter, taskStats[currTask].usStackHighWaterMark);
+        }
+        commands_printf(phandle, "EOL");
+        vPortFree(taskStats);
+    }
+}
 
 void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 	enum { kMaxArgs = 64 };
@@ -85,13 +118,10 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 	if (strcmp(argv[0], "ping") == 0) {
 		commands_printf(phandle, "pong\n");
 	} else if (strcmp(argv[0], "mem") == 0) {
-//		size_t n, size;
-//		n = chHeapStatus(NULL, &size);
-//		commands_printf(phandle, "core free memory : %u bytes", chCoreGetStatusX());
-//		commands_printf(phandle, "heap fragments   : %u", n);
-//		commands_printf(phandle, "heap free total  : %u bytes\n", size);
+		commands_printf(phandle, "minimum heap free  : %u bytes\n", xPortGetMinimumEverFreeHeapSize());
+		commands_printf(phandle, "heap free total  : %u bytes\n", xPortGetFreeHeapSize());
 	} else if (strcmp(argv[0], "threads") == 0) {
-		//TODO
+		terminal_top(phandle);
 	} else if (strcmp(argv[0], "fault") == 0) {
 		commands_printf(phandle, "%s\n", mc_interface_fault_to_string(mc_interface_get_fault()));
 	} else if (strcmp(argv[0], "faults") == 0) {
@@ -776,12 +806,6 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 		commands_printf(phandle, "ping");
 		commands_printf(phandle, "  Print pong here to see if the reply works");
 
-		commands_printf(phandle, "last_adc_duration");
-		commands_printf(phandle, "  The time the latest ADC interrupt consumed");
-
-		commands_printf(phandle, "kv");
-		commands_printf(phandle, "  The calculated kv of the motor");
-
 		commands_printf(phandle, "mem");
 		commands_printf(phandle, "  Show memory usage");
 
@@ -799,20 +823,6 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 
 		commands_printf(phandle, "volt");
 		commands_printf(phandle, "  Prints different voltages");
-
-		commands_printf(phandle, "param_detect [current] [min_rpm] [low_duty]");
-		commands_printf(phandle, "  Spin up the motor in COMM_MODE_DELAY and compute its parameters.");
-		commands_printf(phandle, "  This test should be performed without load on the motor.");
-		commands_printf(phandle, "  Example: param_detect 5.0 600 0.06");
-
-		commands_printf(phandle, "rpm_dep");
-		commands_printf(phandle, "  Prints some rpm-dep values");
-
-		commands_printf(phandle, "can_devs");
-		commands_printf(phandle, "  Prints all CAN devices seen on the bus the past second");
-
-		commands_printf(phandle, "foc_encoder_detect [current]");
-		commands_printf(phandle, "  Run the motor at 1Hz on open loop and compute encoder settings");
 
 		commands_printf(phandle, "measure_res [current]");
 		commands_printf(phandle, "  Lock the motor with a current and calculate its resistance");
@@ -851,9 +861,6 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 		commands_printf(phandle, "foc_openloop_duty [duty] [erpm]");
 		commands_printf(phandle, "  Create an open loop rotating voltage vector.");
 
-		commands_printf(phandle, "nrf_ext_set_enabled [enabled]");
-		commands_printf(phandle, "  Enable or disable external NRF51822.");
-
 		commands_printf(phandle, "foc_sensors_detect_apply [current]");
 		commands_printf(phandle, "  Automatically detect FOC sensors, and apply settings on success.");
 
@@ -863,9 +870,6 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 
 		commands_printf(phandle, "foc_detect_apply_all [max_power_loss_W]");
 		commands_printf(phandle, "  Detect and apply all motor settings, based on maximum resistive motor power losses.");
-
-		commands_printf(phandle, "can_scan");
-		commands_printf(phandle, "  Scan CAN-bus using ping commands, and print all devices that are found.");
 
 		commands_printf(phandle, "foc_detect_apply_all_can [max_power_loss_W]");
 		commands_printf(phandle, "  Detect and apply all motor settings, based on maximum resistive motor power losses. Also");

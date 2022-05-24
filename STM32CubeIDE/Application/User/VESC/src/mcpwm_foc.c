@@ -339,10 +339,10 @@ void mcpwm_foc_init(mc_configuration *conf_m1, mc_configuration *conf_m2) {
 	static uint8_t task = 0;
 
 	if(task==0){
-		xTaskCreate(timer_thread, "tskTIMER", 512, NULL, PRIO_NORMAL, NULL);
+		xTaskCreate(timer_thread, "tskTIMER", 256, NULL, PRIO_NORMAL, NULL);
 
 		hfi_thd_stop = false;
-		xTaskCreate(hfi_thread, "tskHFI", 512, NULL, PRIO_NORMAL, NULL);
+		xTaskCreate(hfi_thread, "tskHFI", 256, NULL, PRIO_NORMAL, NULL);
 
 		pid_thd_stop = false;
 		xTaskCreate(pid_thread, "tskPID", 256, NULL, PRIO_NORMAL, NULL);

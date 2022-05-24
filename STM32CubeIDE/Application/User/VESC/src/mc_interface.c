@@ -177,11 +177,11 @@ void mc_interface_init(void) {
 
 	// Start threads
 	if(sample_send_handle == NULL){
-		xTaskCreate(sample_send_thread, "sample", 512, NULL, PRIO_BELOW_NORMAL, &sample_send_handle);
-		xTaskCreate(timer_thread, "TIMERmc", 512, NULL, PRIO_NORMAL, NULL);
+		xTaskCreate(sample_send_thread, "sample", 256, NULL, PRIO_BELOW_NORMAL, &sample_send_handle);
+		xTaskCreate(timer_thread, "TIMERmc", 256, NULL, PRIO_NORMAL, NULL);
 	}
 	if(fault_stop_handle == NULL){
-		xTaskCreate(fault_stop_thread, "fault_stp", 512, NULL, PRIO_HIGHER, &fault_stop_handle);
+		xTaskCreate(fault_stop_thread, "fault_stp", 256, NULL, PRIO_HIGHER, &fault_stop_handle);
 	}
 	//xTaskCreate(stat_thread, "stat", 512, NULL, PRIO_NORMAL, NULL);
 
@@ -2271,7 +2271,7 @@ void fault_stop_thread(void * arg){
 			fdata.info_args[1] = m_fault_data.info_args[1];
 			m_fault_data.info_str = 0;
 			m_fault_data.info_argn = 0;
-			//TODO terminal_add_fault_data(&fdata);
+			terminal_add_fault_data(&fdata);
 		}
 
 		motor->m_ignore_iterations = motor->m_conf.m_fault_stop_time_ms;

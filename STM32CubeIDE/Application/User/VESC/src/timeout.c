@@ -84,7 +84,7 @@ void timeout_init(void) {
 	static uint8_t task = 0;
 
 	if(task==0){
-		xTaskCreate(timeout_thread, "tskTout", 512, NULL, PRIO_NORMAL, NULL);
+		xTaskCreate(timeout_thread, "tskTout", 256, NULL, PRIO_NORMAL, NULL);
 		task = 1;
 	}
 
