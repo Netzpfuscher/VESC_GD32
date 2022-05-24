@@ -17,10 +17,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
     */
 
+#include <mc_interface.h>
 #include "timeout.h"
-#include "vmc_interface.h"
-//#include "stm32f4xx_conf.h"
-//#include "shutdown.h"
 #include "utils.h"
 
 // Private variables

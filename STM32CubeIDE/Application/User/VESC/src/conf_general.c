@@ -19,7 +19,6 @@
 
 #include <stdlib.h>
 #include "conf_general.h"
-#include "vmc_interface.h"
 #include "utils_math.h"
 #include "confgenerator.h"
 #include "stm32f1xx_hal.h"
@@ -31,6 +30,7 @@
 #include "app.h"
 #include "product.h"
 #include <math.h>
+#include <mc_interface.h>
 #include "mcconf_default.h"
 #include <string.h>
 #include "main.h"

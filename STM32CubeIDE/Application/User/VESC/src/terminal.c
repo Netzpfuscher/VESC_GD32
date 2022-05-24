@@ -1,3 +1,4 @@
+#include <mc_interface.h>
 #include "terminal.h"
 #include <string.h>
 #include "datatypes.h"
@@ -12,6 +13,7 @@
 #include "conf_general.h"
 #include "utils.h"
 #include "mcpwm_foc.h"
+
 
 void terminal_top(PACKET_STATE_t * phandle){
     TaskStatus_t * taskStats;
@@ -66,6 +68,16 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 		commands_printf(phandle, "pong\n");
 	}else if (strcmp(argv[0], "top") == 0){
 		terminal_top(phandle);
+	} else if (strcmp(argv[0], "foc_dc_cal") == 0) {
+		commands_printf(phandle, "Performing DC offset calibration...");
+		int res = mcpwm_foc_dc_cal(true);
+		if (res >= 0) {
+			conf_general_store_mc_configuration((mc_configuration*)mc_interface_get_configuration(),
+					mc_interface_get_motor_thread() == 2);
+			commands_printf(phandle, "Done!\n");
+		} else {
+			commands_printf(phandle, "DC Cal Failed: %d\n", res);
+		}
 	}
 
 }

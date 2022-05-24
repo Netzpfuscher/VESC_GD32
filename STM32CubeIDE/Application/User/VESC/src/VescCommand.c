@@ -28,6 +28,7 @@
 #include "timers.h"
 #include "confgenerator.h"
 #include <math.h>
+#include <mc_interface.h>
 #include "utils.h"
 #include "system.h"
 #include "conf_general.h"
@@ -37,7 +38,6 @@
 #include "product.h"
 #include "app.h"
 #include "ninebot.h"
-#include "vmc_interface.h"
 #include "mcpwm_foc.h"
 #include "utils_math.h"
 #include "utils_sys.h"

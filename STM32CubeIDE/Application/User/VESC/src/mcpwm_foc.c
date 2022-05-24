@@ -22,7 +22,7 @@
 #endif
 
 #include "mcpwm_foc.h"
-#include "vmc_interface.h"
+#include <mc_interface.h>
 //#include "hal.h"
 //#include "stm32f4xx_conf.h"
 #include "stm32f1xx_ll_tim.h"
@@ -3126,9 +3126,6 @@ static void control_current(motor_all_state_t *motor, float dt) {
 	float Ierr_d = state_m->id_target - state_m->id;
 	float Ierr_q = state_m->iq_target - state_m->iq;
 
-	state_m->vd = state_m->vd_int + Ierr_d * conf_now->foc_current_kp * d_gain_scale; //Feedback (PI controller). No D action needed because the plant is a first order system (tf = 1/(Ls+R))
-	state_m->vq = state_m->vq_int + Ierr_q * conf_now->foc_current_kp;
-
 	float ki = conf_now->foc_current_ki;
 	if (conf_now->foc_temp_comp) {
 		ki = motor->m_current_ki_temp_comp;
@@ -3136,6 +3133,9 @@ static void control_current(motor_all_state_t *motor, float dt) {
 
 	state_m->vd_int += Ierr_d * (ki * d_gain_scale * dt);
 	state_m->vq_int += Ierr_q * (ki * dt);
+
+	state_m->vd = state_m->vd_int + Ierr_d * conf_now->foc_current_kp * d_gain_scale; //Feedback (PI controller). No D action needed because the plant is a first order system (tf = 1/(Ls+R))
+	state_m->vq = state_m->vq_int + Ierr_q * conf_now->foc_current_kp;
 
 	// Decoupling. Using feedforward this compensates for the fact that the equations of a PMSM
 	// are not really decoupled (the d axis current has impact on q axis voltage and visa-versa):

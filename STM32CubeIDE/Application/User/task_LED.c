@@ -21,6 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <mc_interface.h>
 #include "task_LED.h"
 #include "task_init.h"
 #include "task_cli.h"
@@ -30,7 +31,6 @@
 #include "task.h"
 #include "product.h"
 #include "VescCommand.h"
-#include "vmc_interface.h"
 
 
 TaskHandle_t LEDHandle;
