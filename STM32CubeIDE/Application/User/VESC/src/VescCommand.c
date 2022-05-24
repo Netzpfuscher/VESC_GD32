@@ -48,10 +48,56 @@ static void(* volatile send_func)(unsigned char *data, unsigned int len, PACKET_
 static volatile int fw_version_sent_cnt = 0;
 static disp_pos_mode display_position_mode;
 
+#define PRINTF_STACK_SIZE 128u
+
 void command_block_call( void * pvParameter1, uint32_t arg );
 
+void commands_init_plot(char *namex, char *namey, PACKET_STATE_t * phandle) {
+	int ind = 0;
+	uint8_t send_buffer[PACKET_SIZE(PRINTF_STACK_SIZE)];
+	uint8_t * buffer = send_buffer + PACKET_HEADER;
+	buffer[ind++] = COMM_PLOT_INIT;
+	memcpy(buffer + ind, namex, strlen(namex));
+	ind += strlen(namex);
+	buffer[ind++] = '\0';
+	memcpy(buffer + ind, namey, strlen(namey));
+	ind += strlen(namey);
+	buffer[ind++] = '\0';
+	packet_send_packet(send_buffer, ind, phandle);
+}
 
-#define PRINTF_STACK_SIZE 128u
+void commands_plot_add_graph(char *name, PACKET_STATE_t * phandle) {
+	int ind = 0;
+	uint8_t send_buffer[PACKET_SIZE(PRINTF_STACK_SIZE)];
+	uint8_t * buffer = send_buffer + PACKET_HEADER;
+	buffer[ind++] = COMM_PLOT_ADD_GRAPH;
+	memcpy(buffer + ind, name, strlen(name));
+	ind += strlen(name);
+	buffer[ind++] = '\0';
+	packet_send_packet(send_buffer, ind, phandle);
+}
+
+void commands_plot_set_graph(int graph, PACKET_STATE_t * phandle) {
+	int ind = 0;
+	uint8_t send_buffer[PACKET_SIZE(2)];
+	uint8_t * buffer = send_buffer + PACKET_HEADER;
+	buffer[ind++] = COMM_PLOT_SET_GRAPH;
+	buffer[ind++] = graph;
+	packet_send_packet(send_buffer, ind, phandle);
+}
+
+void commands_send_plot_points(float x, float y, PACKET_STATE_t * phandle) {
+	int32_t ind = 0;
+	uint8_t send_buffer[PACKET_SIZE(10)];
+	uint8_t * buffer = send_buffer + PACKET_HEADER;
+	buffer[ind++] = COMM_PLOT_DATA;
+	buffer_append_float32_auto(buffer, x, &ind);
+	buffer_append_float32_auto(buffer, y, &ind);
+	packet_send_packet(send_buffer, ind, phandle);
+}
+
+
+
 void commands_printf(PACKET_STATE_t * phandle, const char* format, ...) {
 	if(phandle==NULL) return;
 	va_list arg;

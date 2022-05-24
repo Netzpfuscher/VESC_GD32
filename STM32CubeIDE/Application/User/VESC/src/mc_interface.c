@@ -33,8 +33,9 @@
 //#include "comm_can.h"
 //#include "shutdown.h"
 #include "app.h"
-//#include "mempools.h"
+#include "mempools.h"
 #include "crc.h"
+#include "timeout.h"
 //#include "bms.h"
 
 #include <math.h>
@@ -1597,49 +1598,49 @@ static void update_override_limits(volatile motor_if_state_t *motor, volatile mc
 
 	const float duty_now_abs = fabsf(mc_interface_get_duty_cycle_now());
 
-	//TODO UTILS_LP_FAST(motor->m_temp_fet, NTC_TEMP(is_motor_1 ? ADC_IND_TEMP_MOS : ADC_IND_TEMP_MOS_M2), 0.1);
+	UTILS_LP_FAST(motor->m_temp_fet, NTC_TEMP(is_motor_1 ? ADC_IND_TEMP_MOS : ADC_IND_TEMP_MOS_M2), 0.1);
 	float temp_motor = 0.0;
 
-	switch(conf->m_motor_temp_sens_type) {
-	case TEMP_SENSOR_NTC_10K_25C:
-		//TODO temp_motor = is_motor_1 ? NTC_TEMP_MOTOR(conf->m_ntc_motor_beta) : NTC_TEMP_MOTOR_2(conf->m_ntc_motor_beta);
-		break;
-
-	case TEMP_SENSOR_NTC_100K_25C:
-		//TODO temp_motor = is_motor_1 ? NTC100K_TEMP_MOTOR(conf->m_ntc_motor_beta) : NTC100K_TEMP_MOTOR_2(conf->m_ntc_motor_beta);
-		break;
-
-	case TEMP_SENSOR_PTC_1K_100C:
-		//TODO temp_motor = is_motor_1 ? PTC_TEMP_MOTOR(1000.0, conf->m_ptc_motor_coeff, 100) : PTC_TEMP_MOTOR_2(1000.0, conf->m_ptc_motor_coeff, 100);
-		break;
-
-	case TEMP_SENSOR_KTY83_122: {
-		// KTY83_122 datasheet used to approximate resistance at given temperature to cubic polynom
-		// https://docs.google.com/spreadsheets/d/1iJA66biczfaXRNClSsrVF9RJuSAKoDG-bnRZFMOcuwU/edit?usp=sharing
-		// Thanks to: https://vasilisks.wordpress.com/2017/12/14/getting-temperature-from-ntc-kty83-kty84-on-mcu/#more-645
-		// You can change pull up resistor and update NTC_RES_MOTOR for your hardware without changing polynom
-		float res = 0;//TODO NTC_RES_MOTOR(ADC_Value[is_motor_1 ? ADC_IND_TEMP_MOTOR : ADC_IND_TEMP_MOTOR_2]);
-		float pow2 = res * res;
-		temp_motor = 0.0000000102114874947423 * pow2 * res - 0.000069967997703501 * pow2 +
-				0.243402040973194 * res - 160.145048329356;
-	} break;
-
-	case TEMP_SENSOR_KTY84_130: {
-		float res = 0;//TODO NTC_RES_MOTOR(ADC_Value[is_motor_1 ? ADC_IND_TEMP_MOTOR : ADC_IND_TEMP_MOTOR_2]);
-		temp_motor = -7.82531699e-12 * res * res * res * res + 6.34445902e-8 * res * res * res -
-				0.00020119157  * res * res + 0.407683016 * res - 161.357536;
-	} break;
-
-	case TEMP_SENSOR_NTCX:
-		//TODO temp_motor = is_motor_1 ? NTCX_TEMP_MOTOR(conf->m_ntcx_ptcx_res, conf->m_ntc_motor_beta, conf->m_ntcx_ptcx_temp_base) :
-				//TODO NTCX_TEMP_MOTOR_2(conf->m_ntcx_ptcx_res, conf->m_ntc_motor_beta, conf->m_ntcx_ptcx_temp_base);
-		break;
-
-	case TEMP_SENSOR_PTCX:
-		//TODO temp_motor = is_motor_1 ? PTC_TEMP_MOTOR(conf->m_ntcx_ptcx_res, conf->m_ptc_motor_coeff, conf->m_ntcx_ptcx_temp_base) :
-				//TODO PTC_TEMP_MOTOR_2(conf->m_ntcx_ptcx_res, conf->m_ptc_motor_coeff, conf->m_ntcx_ptcx_temp_base);
-		break;
-	}
+//	switch(conf->m_motor_temp_sens_type) {
+//	case TEMP_SENSOR_NTC_10K_25C:
+//		//TODO temp_motor = is_motor_1 ? NTC_TEMP_MOTOR(conf->m_ntc_motor_beta) : NTC_TEMP_MOTOR_2(conf->m_ntc_motor_beta);
+//		break;
+//
+//	case TEMP_SENSOR_NTC_100K_25C:
+//		//TODO temp_motor = is_motor_1 ? NTC100K_TEMP_MOTOR(conf->m_ntc_motor_beta) : NTC100K_TEMP_MOTOR_2(conf->m_ntc_motor_beta);
+//		break;
+//
+//	case TEMP_SENSOR_PTC_1K_100C:
+//		//TODO temp_motor = is_motor_1 ? PTC_TEMP_MOTOR(1000.0, conf->m_ptc_motor_coeff, 100) : PTC_TEMP_MOTOR_2(1000.0, conf->m_ptc_motor_coeff, 100);
+//		break;
+//
+//	case TEMP_SENSOR_KTY83_122: {
+//		// KTY83_122 datasheet used to approximate resistance at given temperature to cubic polynom
+//		// https://docs.google.com/spreadsheets/d/1iJA66biczfaXRNClSsrVF9RJuSAKoDG-bnRZFMOcuwU/edit?usp=sharing
+//		// Thanks to: https://vasilisks.wordpress.com/2017/12/14/getting-temperature-from-ntc-kty83-kty84-on-mcu/#more-645
+//		// You can change pull up resistor and update NTC_RES_MOTOR for your hardware without changing polynom
+//		float res = 0;//TODO NTC_RES_MOTOR(ADC_Value[is_motor_1 ? ADC_IND_TEMP_MOTOR : ADC_IND_TEMP_MOTOR_2]);
+//		float pow2 = res * res;
+//		temp_motor = 0.0000000102114874947423 * pow2 * res - 0.000069967997703501 * pow2 +
+//				0.243402040973194 * res - 160.145048329356;
+//	} break;
+//
+//	case TEMP_SENSOR_KTY84_130: {
+//		float res = 0;//TODO NTC_RES_MOTOR(ADC_Value[is_motor_1 ? ADC_IND_TEMP_MOTOR : ADC_IND_TEMP_MOTOR_2]);
+//		temp_motor = -7.82531699e-12 * res * res * res * res + 6.34445902e-8 * res * res * res -
+//				0.00020119157  * res * res + 0.407683016 * res - 161.357536;
+//	} break;
+//
+//	case TEMP_SENSOR_NTCX:
+//		//TODO temp_motor = is_motor_1 ? NTCX_TEMP_MOTOR(conf->m_ntcx_ptcx_res, conf->m_ntc_motor_beta, conf->m_ntcx_ptcx_temp_base) :
+//				//TODO NTCX_TEMP_MOTOR_2(conf->m_ntcx_ptcx_res, conf->m_ntc_motor_beta, conf->m_ntcx_ptcx_temp_base);
+//		break;
+//
+//	case TEMP_SENSOR_PTCX:
+//		//TODO temp_motor = is_motor_1 ? PTC_TEMP_MOTOR(conf->m_ntcx_ptcx_res, conf->m_ptc_motor_coeff, conf->m_ntcx_ptcx_temp_base) :
+//				//TODO PTC_TEMP_MOTOR_2(conf->m_ntcx_ptcx_res, conf->m_ptc_motor_coeff, conf->m_ntcx_ptcx_temp_base);
+//		break;
+//	}
 
 	// If the reading is messed up (by e.g. reading 0 on the ADC and dividing by 0) we avoid putting an
 	// invalid value in the filter, as it will never recover. It is probably safest to keep running the
@@ -2125,31 +2126,25 @@ float mc_interface_stat_temp_motor_max(void) {
 }
 
 float mc_interface_stat_count_time(void) {
-	//TODO return UTILS_AGE_S(motor_now()->m_stats.time_start);
+	return UTILS_AGE_S(motor_now()->m_stats.time_start);
 }
 
 void mc_interface_stat_reset(void) {
 	volatile setup_stats *s = &motor_now()->m_stats;
 	memset((void*)s, 0, sizeof(setup_stats));
-	//TODO s->time_start = chVTGetSystemTimeX();
+	s->time_start = xTaskGetTickCount();
 	s->max_temp_mos = -300.0;
 	s->max_temp_motor = -300.0;
 }
 
-//static THD_FUNCTION(stat_thread, arg) {
-//	(void)arg;
-//
-//	chRegSetThreadName("StatCounter");
-//
-//	for(;;) {
-//		update_stats(&m_motor_1);
-//#ifdef HW_HAS_DUAL_MOTORS
-//		update_stats(&m_motor_2);
-//#endif
-//
-//		chThdSleepMilliseconds(10);
-//	}
-//}
+void stat_thread(void * arg){
+	(void)arg;
+
+	for(;;) {
+		update_stats(&m_motor_1);
+		vTaskDelay(MS_TO_TICKS(10));
+	}
+}
 
 void sample_send_thread(void * arg){
 	(void)arg;
@@ -2269,7 +2264,7 @@ void fault_stop_thread(void * arg){
 			fdata.tim_current_samp = current_samp;
 			fdata.tim_top = tim_top;
 			fdata.comm_step = 0;//mcpwm_get_comm_step();
-			//fdata.temperature = NTC_TEMP(ADC_IND_TEMP_MOS);
+			fdata.temperature = NTC_TEMP(ADC_IND_TEMP_MOS);
 			fdata.info_str = m_fault_data.info_str;
 			fdata.info_argn = m_fault_data.info_argn;
 			fdata.info_args[0] = m_fault_data.info_args[0];

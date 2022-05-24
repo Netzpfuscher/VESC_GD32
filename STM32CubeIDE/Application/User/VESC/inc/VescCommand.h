@@ -34,6 +34,11 @@ void send_position(PACKET_STATE_t * phandle);
 void commands_printf(PACKET_STATE_t * phandle, const char* format, ...);
 void commands_send_appconf(COMM_PACKET_ID packet_id, app_configuration *appconf, PACKET_STATE_t * phandle);
 
+void commands_init_plot(char *namex, char *namey, PACKET_STATE_t * phandle);
+void commands_plot_add_graph(char *name, PACKET_STATE_t * phandle);
+void commands_plot_set_graph(int graph, PACKET_STATE_t * phandle);
+void commands_send_plot_points(float x, float y, PACKET_STATE_t * phandle);
+
 typedef enum {
 	SAMP_IDLE,
 	SAMP_START,

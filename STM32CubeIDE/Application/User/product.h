@@ -47,7 +47,16 @@
 #define PHASE_FILTER_OFF()
 #define SHUTDOWN_RESET()
 #define IS_DRV_FAULT() 0
+#define IS_DRV_FAULT_2() 0
+#define HW_RESET_DRV_FAULTS()
 #define GET_INPUT_VOLTAGE() ((float)ADC3->JDR2*0.013927)
+
+// NTC Termistors
+#define NTC_RES(adc_val)		((4095.0 * 10000.0) / (4095 - adc_val) - 10000.0)
+
+// (jaykup) Measured 10k NTC at 3307 beta (11.7kOhm @ 70F, 21.4kOhm @ 43F)
+// (jaykup) 273 is C to K conversion
+#define NTC_TEMP(adc_ind)		(1.0 / ((logf(NTC_RES(ADC3->JDR3) / 10000.0) / 3380.0) + (1.0 / 298.15)) - 273.15)
 
 #ifndef HW_MAX_CURRENT_OFFSET
 #define HW_MAX_CURRENT_OFFSET 				620
