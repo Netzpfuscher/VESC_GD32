@@ -1,10 +1,10 @@
 #include "app.h"
 #include "crc.h"
-#include "product.h"
 #include "shutdown.h"
 #include "task_init.h"
 #include "utils.h"
 #include "timers.h"
+#include "hw.h"
 
 extern app_configuration appconf;
 static volatile bool output_disabled_now = false;

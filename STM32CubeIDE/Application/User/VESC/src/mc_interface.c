@@ -47,7 +47,7 @@
 #define DIR_MULT		(motor_now()->m_conf.m_invert_direction ? -1.0 : 1.0)
 
 // Global variables
-volatile uint16_t ADC_Value[HW_ADC_CHANNELS + HW_ADC_CHANNELS_EXTRA];
+//volatile uint16_t ADC_Value[HW_ADC_CHANNELS + HW_ADC_CHANNELS_EXTRA];
 volatile float ADC_curr_norm_value[6];
 
 typedef struct {
@@ -478,8 +478,6 @@ void mc_interface_set_pid_pos(float pos) {
 	if (mc_interface_try_input()) {
 		return;
 	}
-
-	volatile mc_configuration *conf = &motor_now()->m_conf;
 
 	motor_now()->m_position_set = pos;
 

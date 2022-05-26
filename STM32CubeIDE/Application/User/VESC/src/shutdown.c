@@ -17,16 +17,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
     */
 
+#include <commands.h>
 #include "shutdown.h"
 #include "app.h"
 #include "conf_general.h"
 #include "timeout.h"
 #include "FreeRTOS.h"
-#include "product.h"
+#include "hw.h"
 
 //Debug
 #include "task_init.h"
-#include "VescCommand.h"
 
 #ifdef HW_SHUTDOWN_HOLD_ON
 

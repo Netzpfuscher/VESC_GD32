@@ -23,7 +23,6 @@
 #define VESCCOMMAND_H_
 
 #include "datatypes.h"
-#include "product.h"
 #include "packet.h"
 
 void commands_send_mcconf(COMM_PACKET_ID packet_id, mc_configuration *mcconf, PACKET_STATE_t * phandle);

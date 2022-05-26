@@ -21,14 +21,13 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <commands.h>
 #include "main.h"
 #include "app.h"
 #include "utils_math.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "product.h"
 #include "ninebot.h"
-#include "VescCommand.h"
 #include "task_init.h"
 #include "timers.h"
 #include <math.h>

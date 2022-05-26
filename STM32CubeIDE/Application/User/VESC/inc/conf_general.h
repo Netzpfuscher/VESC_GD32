@@ -24,7 +24,6 @@
 #include "mcconf_default.h"
 #include "appconf_default.h"
 #include "packet.h"
-#include "product.h"
 
 
 #define ADDR_FLASH_PAGE_126    ((uint32_t)0x08000000+(APP_PAGE*PAGE_SIZE))

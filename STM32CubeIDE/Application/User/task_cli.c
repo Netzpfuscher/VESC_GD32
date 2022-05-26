@@ -21,14 +21,13 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <commands.h>
 #include "main.h"
 #include "task_cli.h"
 #include "task_init.h"
 #include "printf.h"
 #include <string.h>
 #include "packet.h"
-#include "VescCommand.h"
-#include "product.h"
 #include "app.h"
 #include "ninebot.h"
 #include "utils.h"
@@ -133,11 +132,9 @@ void task_cli(void * argument)
 }
 
 void task_cli_init(port_str * port){
-#if VESC_TOOL_ENABLE
 	if(port->task_handle == NULL){
 		xTaskCreate(task_cli, "tskCLI", 320, (void*)port, PRIO_NORMAL, &port->task_handle);
 	}
-#endif
 }
 
 void task_cli_kill(port_str * port){

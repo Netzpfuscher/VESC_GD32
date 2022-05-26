@@ -19,13 +19,11 @@
 
 //#include "ch.h"
 //#include "hal.h"
+#include <commands.h>
 #include "terminal.h"
 //#include "mcpwm.h"
 #include "mcpwm_foc.h"
 #include "mc_interface.h"
-#include "VescCommand.h"
-//#include "hw.h"
-//#include "comm_can.h"
 #include "utils_math.h"
 #include "utils_sys.h"
 #include "timeout.h"

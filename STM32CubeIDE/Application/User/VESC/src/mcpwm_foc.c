@@ -33,7 +33,6 @@
 //#include "ledpwm.h"
 #include "terminal.h"
 //#include "encoder/encoder.h"
-//#include "commands.h"
 #include "timeout.h"
 //#include "timer.h"
 #include <math.h>
@@ -41,11 +40,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "foc_math.h"
-#include "product.h"
 #include "FreeRTOS.h"
-#include "VescCommand.h"
+#include <commands.h>
 #include "task_init.h"
-#include "defines.h"
 #include "main.h"
 #include "mcconf_default.h"
 

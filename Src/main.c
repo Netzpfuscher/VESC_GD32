@@ -28,7 +28,7 @@
 #include "task_init.h"
 #include "conf_general.h"
 #include "app.h"
-#include "product.h"
+#include "hw.h"
 #ifdef M365_gd32
 #include "gd32.h"
 #include "mcpwm_foc.h"

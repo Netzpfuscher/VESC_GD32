@@ -23,7 +23,6 @@
 
 #include "task_init.h"
 #include "task_LED.h"
-#include "product.h"
 #include "app.h"
 #include "timeout.h"
 #include "shutdown.h"

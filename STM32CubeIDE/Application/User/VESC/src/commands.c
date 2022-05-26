@@ -19,8 +19,7 @@
     Ported to GD32F303 and FreeRTOS 2022 Jens Kerrinnes
  */
 
-#include "VescCommand.h"
-#include "defines.h"
+#include <commands.h>
 #include "buffer.h"
 #include "packet.h"
 #include <string.h>
@@ -35,7 +34,6 @@
 #include "stdarg.h"
 #include <printf.h>
 #include "terminal.h"
-#include "product.h"
 #include "app.h"
 #include "ninebot.h"
 #include "mcpwm_foc.h"
@@ -46,7 +44,6 @@
 #include "shutdown.h"
 
 
-static void(* volatile send_func)(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle) = 0;
 static volatile int fw_version_sent_cnt = 0;
 static disp_pos_mode display_position_mode;
 
@@ -1011,44 +1008,11 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 	uint32_t len = packet->len;
 	PACKET_STATE_t * phandle = packet->phandle;
 
-//	// Wait for main to finish
-//	while(!main_init_done()) {
-//		chThdSleepMilliseconds(10);
-//	}
-
 	COMM_PACKET_ID packet_id = arg;
-
-
 
 	switch (packet_id) {
 	case COMM_DETECT_MOTOR_PARAM: {
-		uint8_t buffer[PACKET_SIZE(20)];
-		uint8_t * send_buffer = buffer + PACKET_HEADER;
-		int32_t ind = 0;
-		float detect_current = buffer_get_float32(data, 1e3, &ind);
-		float detect_min_rpm = buffer_get_float32(data, 1e3, &ind);
-		float detect_low_duty = buffer_get_float32(data, 1e3, &ind);
-		float detect_cycle_int_limit;
-		float detect_coupling_k;
-		int8_t detect_hall_table[8];
-		int detect_hall_res;
-
-//		if (!conf_general_detect_motor_param(detect_current, detect_min_rpm,
-//				detect_low_duty, &detect_cycle_int_limit, &detect_coupling_k,
-//				detect_hall_table, &detect_hall_res)) {
-//			detect_cycle_int_limit = 0.0;
-//			detect_coupling_k = 0.0;
-//		}
-
-		ind = 0;
-		send_buffer[ind++] = COMM_DETECT_MOTOR_PARAM;
-		buffer_append_int32(send_buffer, (int32_t)(detect_cycle_int_limit * 1000.0), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(detect_coupling_k * 1000.0), &ind);
-		memcpy(send_buffer + ind, detect_hall_table, 8);
-		ind += 8;
-		send_buffer[ind++] = detect_hall_res;
-		packet_send_packet(buffer, ind, phandle);
-
+		//Only for BLDC
 	} break;
 
 	case COMM_DETECT_MOTOR_R_L: {
@@ -1087,9 +1051,11 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 	} break;
 
 	case COMM_DETECT_MOTOR_FLUX_LINKAGE: {
+		//Only for BLDC
 	} break;
 
 	case COMM_DETECT_ENCODER: {
+		//No encoder Support
 	} break;
 
 	case COMM_DETECT_HALL_FOC: {
