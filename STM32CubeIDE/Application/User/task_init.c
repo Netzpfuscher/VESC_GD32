@@ -23,10 +23,10 @@
 
 #include "task_init.h"
 #include "task_LED.h"
-#include "task_pwr.h"
 #include "product.h"
 #include "app.h"
 #include "timeout.h"
+#include "shutdown.h"
 
 unsigned long getRunTimeCounterValue(void){
 	return HAL_GetTick();
@@ -49,7 +49,8 @@ void task_init(){
 	app_adc_init_timer();
 	task_cli_init(&main_uart);
 	task_LED_init(&main_uart);  //Bring up the blinky
-	task_PWR_init(&main_uart);  //Manage power button
+
+	shutdown_init();
 
 	timeout_init();
 	timeout_configure(appconf.timeout_msec, appconf.timeout_brake_current, appconf.kill_sw_mode);

@@ -139,6 +139,8 @@ void HardFault_Handler(void)
 {
  /* USER CODE BEGIN HardFault_IRQn 0 */
 
+	mcpwm_foc_stop_pwm(false);
+
  /* USER CODE END HardFault_IRQn 0 */
 
   /* Go to infinite loop when Hard Fault exception occurs */

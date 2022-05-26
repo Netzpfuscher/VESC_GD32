@@ -1,5 +1,6 @@
 #include "main.h"
 #include "defines.h"
+#include "hw.h"
 
 #ifndef APP_PRODUCT_H_
 #define APP_PRODUCT_H_
@@ -45,11 +46,13 @@
 #define CURRENT_FILTER_OFF()
 #define PHASE_FILTER_ON()
 #define PHASE_FILTER_OFF()
-#define SHUTDOWN_RESET()
 #define IS_DRV_FAULT() 0
 #define IS_DRV_FAULT_2() 0
 #define HW_RESET_DRV_FAULTS()
 #define GET_INPUT_VOLTAGE() ((float)ADC3->JDR2*0.013927)
+
+
+
 
 // NTC Termistors
 #define NTC_RES(adc_val)		((4095.0 * 10000.0) / (4095 - adc_val) - 10000.0)
@@ -95,6 +98,8 @@
 #define VIN_R2 2000.0
 #define ADC_VOLTS_PH_FACTOR 1.0
 #define ADC_VOLTS_INPUT_FACTOR 1.0
+
+
 
 #endif
 /****************************************************************************/

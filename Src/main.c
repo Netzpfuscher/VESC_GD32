@@ -32,6 +32,7 @@
 #ifdef M365_gd32
 #include "gd32.h"
 #include "mcpwm_foc.h"
+#include "shutdown.h"
 #endif
 
 //#include "stm32f103xg.h"
@@ -86,8 +87,6 @@ static void MX_USART3_UART_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
-void startMediumFrequencyTask(void *argument);
-extern void StartSafetyTask(void *argument);
 
 
 /* USER CODE END PFP */
@@ -156,6 +155,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   HAL_GPIO_WritePin(TPS_ENA_GPIO_Port, TPS_ENA_Pin, GPIO_PIN_SET);
+  power_control(DEV_PWR_ON);
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */

@@ -24,7 +24,6 @@
 #include "main.h"
 #include "task_cli.h"
 #include "task_init.h"
-#include "task_pwr.h"
 #include "printf.h"
 #include <string.h>
 #include "packet.h"

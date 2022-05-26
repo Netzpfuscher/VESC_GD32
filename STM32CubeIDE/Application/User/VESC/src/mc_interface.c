@@ -31,7 +31,7 @@
 #include "buffer.h"
 //#include "gpdrive.h"
 //#include "comm_can.h"
-//#include "shutdown.h"
+#include "shutdown.h"
 #include "app.h"
 #include "mempools.h"
 #include "crc.h"

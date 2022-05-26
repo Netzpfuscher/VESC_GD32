@@ -42,6 +42,8 @@
 #include "utils_math.h"
 #include "utils_sys.h"
 #include "mempools.h"
+#include "timeout.h"
+#include "shutdown.h"
 
 
 static void(* volatile send_func)(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle) = 0;
@@ -224,15 +226,6 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 	packet_id = data[0];
 	data++;
 	len--;
-
-
-	//send_func = reply_func;
-
-	// Avoid calling invalid function pointer if it is null.
-	// commands_send_packet will make the check.
-//	if (!reply_func) {
-//		reply_func = commands_send_packet;
-//	}
 
 	switch (packet_id) {
 	case COMM_FW_VERSION: {
@@ -540,7 +533,7 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 					break;
 
 				case COMM_ALIVE:
-					//SHUTDOWN_RESET();
+					SHUTDOWN_RESET();
 					timeout_reset();
 					break;
 

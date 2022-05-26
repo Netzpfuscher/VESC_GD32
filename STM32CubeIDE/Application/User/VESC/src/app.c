@@ -1,7 +1,7 @@
 #include "app.h"
 #include "crc.h"
 #include "product.h"
-#include "task_pwr.h"
+#include "shutdown.h"
 #include "task_init.h"
 #include "utils.h"
 #include "timers.h"
@@ -37,32 +37,6 @@ void app_set_configuration(app_configuration *conf) {
 
 	HAL_UART_Init(&VESC_USART_DMA);
 
-	switch(conf->shutdown_mode){
-	case SHUTDOWN_MODE_OFF_AFTER_10S:
-		PWR_set_shutdown_time(10);
-		break;
-	case SHUTDOWN_MODE_OFF_AFTER_1M:
-		PWR_set_shutdown_time(60);
-		break;
-	case SHUTDOWN_MODE_OFF_AFTER_5M:
-		PWR_set_shutdown_time(300);
-		break;
-	case SHUTDOWN_MODE_OFF_AFTER_10M:
-		PWR_set_shutdown_time(600);
-		break;
-	case SHUTDOWN_MODE_OFF_AFTER_30M:
-		PWR_set_shutdown_time(1800);
-		break;
-	case SHUTDOWN_MODE_OFF_AFTER_1H:
-		PWR_set_shutdown_time(3600);
-		break;
-	case SHUTDOWN_MODE_OFF_AFTER_5H:
-		PWR_set_shutdown_time(18000);
-		break;
-	default:
-		PWR_set_shutdown_time(0);  // 0 = disable timer
-		break;
-	}
 
 	utils_truncate_number_int((int*)&appconf.app_adc_conf.update_rate_hz, 1, 200);
 
