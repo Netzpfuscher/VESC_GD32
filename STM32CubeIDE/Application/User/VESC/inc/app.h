@@ -31,6 +31,8 @@ void task_app_kill();
 void my_uart_send_data(unsigned char *buf, unsigned int len, port_str * port);
 float app_adc_get_decoded_level(void);
 float app_adc_get_decoded_level2(void);
+float app_adc_get_voltage(void);
+float app_adc_get_voltage2(void);
 void app_adc_stop_output(void);
 void app_adc_set_mode(uint8_t mode_bit);
 void app_adc_clear_mode(uint8_t mode_bit);

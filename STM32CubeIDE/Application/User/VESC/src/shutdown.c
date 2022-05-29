@@ -34,6 +34,8 @@
 bool volatile m_button_pressed = false;
 static volatile float m_inactivity_time = 0.0;
 
+static void(*callback)(eButtonEvent evt) = NULL;
+
 SemaphoreHandle_t m_sample_mutex;
 
 static volatile bool m_init_done = false;
@@ -46,6 +48,11 @@ void shutdown_init(void) {
 	xTaskCreate(shutdown_thread, "Shutdown", 256, NULL, PRIO_NORMAL, NULL);
 	m_init_done = true;
 }
+
+void shutdown_set_callback(void(*callback_func)(eButtonEvent evt)){
+	callback = callback_func;
+}
+
 
 void shutdown_reset_timer(void) {
 	m_inactivity_time = 0.0;
@@ -160,6 +167,11 @@ void power_control(uint8_t pwr)
 
 
 void button_process(void) {
+	eButtonEvent evt = getButtonEvent();
+
+	if(callback != NULL){
+		callback(evt);
+	}
 
 	switch( getButtonEvent() ){
 		  case NO_PRESS : break ;

@@ -554,12 +554,9 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 					uint8_t * buffer = send_buffer + PACKET_HEADER;
 					buffer[ind++] = COMM_GET_DECODED_ADC;
 					buffer_append_int32(buffer, app_adc_get_decoded_level() * 1000000.0, &ind);
-					//buffer_append_int32(send_buffer, (int32_t)(app_adc_get_voltage() * 1000000.0), &ind);
-					buffer_append_int32(buffer, 0 * 1000000.0, &ind);
-					//buffer_append_int32(send_buffer, (int32_t)(app_adc_get_decoded_level2() * 1000000.0), &ind);
+					buffer_append_int32(buffer, (int32_t)(app_adc_get_voltage() * 1000000.0), &ind);
 					buffer_append_int32(buffer, app_adc_get_decoded_level2() * 1000000.0, &ind);
-					//buffer_append_int32(send_buffer, (int32_t)(app_adc_get_voltage2() * 1000000.0), &ind);
-					buffer_append_int32(buffer, 0 * 1000000.0, &ind);
+					buffer_append_int32(buffer, (int32_t)(app_adc_get_voltage2() * 1000000.0), &ind);
 					packet_send_packet(send_buffer, ind, phandle);
 				} break;
 
@@ -649,7 +646,7 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 					val.wh_tot = 0;
 
 					float wh_batt_left = 1.0;
-					float battery_level = 0.0;//TODO VescToSTM_get_battery_level(&wh_batt_left);
+					float battery_level = mc_interface_get_battery_level(&wh_batt_left);
 
 					int32_t ind = 0;
 					uint8_t send_buffer[PACKET_SIZE(80)];

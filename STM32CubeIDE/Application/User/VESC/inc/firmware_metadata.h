@@ -17,7 +17,7 @@
 
 // Track the cross-compiler version
 #ifndef ARM_GCC_VERSION
-#define ARM_GCC_VERSION "undefined"
+#define ARM_GCC_VERSION __VERSION__
 #endif
 
 

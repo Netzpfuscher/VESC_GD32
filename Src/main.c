@@ -136,7 +136,7 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM3_Init();
   MX_USART3_UART_Init();
-  //MX_USART1_UART_Init();
+  MX_USART1_UART_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -783,13 +783,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(BRAKE_LIGHT_GPIO_Port, &GPIO_InitStruct);
 
-  GPIO_InitStruct.Pin = GPIO_PIN_6;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+//  GPIO_InitStruct.Pin = GPIO_PIN_6;
+//  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+//  GPIO_InitStruct.Pull = GPIO_NOPULL;
+//  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+//  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+//
+//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure peripheral I/O remapping */
   __HAL_AFIO_REMAP_PD01_ENABLE();

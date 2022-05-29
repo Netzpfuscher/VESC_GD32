@@ -882,9 +882,6 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 		commands_printf(phandle, "crc");
 		commands_printf(phandle, "  Print CRC values.");
 
-		commands_printf(phandle, "drv_reset_faults");
-		commands_printf(phandle, "  Reset gate driver faults (if possible).");
-
 		commands_printf(phandle, "update_pid_pos_offset [angle_now] [store]");
 		commands_printf(phandle, "  Update position PID offset.");
 

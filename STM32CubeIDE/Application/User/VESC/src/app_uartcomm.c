@@ -31,12 +31,16 @@
 #include "task_init.h"
 #include "timers.h"
 #include <math.h>
+#include "mc_interface.h"
+#include "timeout.h"
+#include "shutdown.h"
 
 NinebotPack frame;
 
 m365Answer m365_to_display = {.start1=NinebotHeader0, .start2=NinebotHeader1, .len=8, .addr=0x21, .cmd=0x64, .arg=0, .mode=M365_MODE_SPORT};
 
 uint8_t app_connection_timout = 8;
+static float conf_max_erpm;
 
 void vTimerCallback( TimerHandle_t xTimer );
 uint32_t app_updaterate();
@@ -63,6 +67,7 @@ static uint32_t uart_get_write_pos(port_str * port){
 
 static uint8_t adc1;
 static uint8_t adc2;
+static float adc1_voltage, adc2_voltage;
 void app_adc_set_adc(uint8_t AD1, uint8_t AD2){
 	if(xTimer!=NULL && xTimerIsTimerActive(xTimer)==pdFALSE){
 		xTimerStart(xTimer, 100);
@@ -70,6 +75,7 @@ void app_adc_set_adc(uint8_t AD1, uint8_t AD2){
 	adc1 = AD1;
 	adc2 = AD2;
 }
+
 
 
 
@@ -102,8 +108,8 @@ void vTimerCallback( TimerHandle_t xTimer ){
 
 	float pwr = utils_map(aver1, 0, 255<<4, 0, 3.3); //Throttle;
 	float brake = utils_map(aver2, 0, 255<<4, 0, 3.3); //Brake;
-	//TODO VescToSTM_set_ADC1(pwr);
-	//TODO VescToSTM_set_ADC2(brake);
+	adc1_voltage = pwr;
+	adc2_voltage = brake;
 
 
 	// Map the read voltage
@@ -196,16 +202,16 @@ void vTimerCallback( TimerHandle_t xTimer ){
 
 	case ADC_CTRL_TYPE_CURRENT_NOREV_BRAKE_CENTER:
 		if(pwr>=0){
-			//TODO VescToSTM_set_current_rel(pwr);
+			mc_interface_set_current_rel(pwr);
 		}else{
-			//TODO VescToSTM_set_brake_current_rel(pwr);
+			mc_interface_set_brake_current_rel(pwr);
 		}
 		break;
 	case ADC_CTRL_TYPE_CURRENT_NOREV_BRAKE_ADC:
 		if(brake>0){
-			//TODO VescToSTM_set_brake_current_rel(brake);
+			mc_interface_set_brake_current_rel(brake);
 		}else if(pwr>=0){
-			//TODO VescToSTM_set_current_rel(pwr);
+			mc_interface_set_current_rel(pwr);
 		}
 
 		break;
@@ -219,7 +225,7 @@ void vTimerCallback( TimerHandle_t xTimer ){
 		} else {
 			speed = pwr;
 		}
-		//VescToSTM_set_speed(speed);
+		mc_interface_set_pid_speed(speed);
 	}
 		break;
 	default:
@@ -232,6 +238,13 @@ float app_adc_get_decoded_level(void) {
 }
 float app_adc_get_decoded_level2(void) {
 	return decoded_level2;
+}
+
+float app_adc_get_voltage(void){
+	return adc1_voltage;
+}
+float app_adc_get_voltage2(void){
+	return adc2_voltage;
 }
 
 void app_adc_stop_output(void) {
@@ -265,6 +278,8 @@ void app_check_timer(){
 }
 
 void app_adc_init_timer(){
+	mc_configuration* conf =  mc_interface_get_configuration();
+	conf_max_erpm = conf->l_max_erpm;
 	if(xTimer==NULL){
 		xTimer = xTimerCreate("ADC_UP",app_updaterate() , pdTRUE, ( void * ) 0,vTimerCallback );
 	}
@@ -273,6 +288,36 @@ void app_adc_init_timer(){
 void app_timer_update_period(){
 	xTimerChangePeriod(xTimer, app_updaterate(), 1000);
 }
+
+
+void app_adc_button_callback(eButtonEvent evt){
+	if(evt == SINGLE_PRESS){
+		m365_to_display.light = m365_to_display.light ? 0 : 1;
+	}else if (evt == DOUBLE_PRESS) {
+		mc_configuration* conf =  mc_interface_get_configuration();
+		float kmh = 1337;
+		switch(m365_to_display.mode){
+			case M365_MODE_DRIVE:
+				app_adc_speed_mode(M365_MODE_SPORT);
+				kmh = 1337;
+				break;
+			case M365_MODE_SPORT:
+				app_adc_speed_mode(M365_MODE_SLOW);
+				kmh = 10;
+				break;
+			case M365_MODE_SLOW:
+				app_adc_speed_mode(M365_MODE_DRIVE);
+				kmh = 25;
+				break;
+		}
+		 if(kmh==1337){
+			 conf->l_max_erpm = conf_max_erpm;
+		}else{
+			conf->l_max_erpm = (((float)kmh * 1000.0 / 60.0)/(conf->si_wheel_diameter*M_PI)) * conf->si_motor_poles/2.0 * conf->si_gear_ratio;
+		}
+	}
+}
+
 
 void task_app(void * argument)
 {
@@ -287,6 +332,10 @@ void task_app(void * argument)
 	CLEAR_BIT(port->uart->Instance->CR3, USART_CR3_EIE);
 
 	app_adc_init_timer();
+
+
+
+	shutdown_set_callback(app_adc_button_callback);
 
 	xTimerStart(xTimer, 100);
 
@@ -306,7 +355,7 @@ void task_app(void * argument)
 					case 0x65:
 						adc1 = frame.payload[1];
 						adc2 = frame.payload[2];
-						//VescToSTM_timeout_reset();
+						timeout_reset();
 						app_check_timer();
 						//commands_printf(main_uart.phandle, "LEN: %d CMD: %x ARG: %x PAY: %02x %02x %02x %02x", frame.len, frame.cmd, frame.arg, frame.payload[0], frame.payload[1], frame.payload[2], frame.payload[3]);
 					break;
@@ -318,16 +367,15 @@ void task_app(void * argument)
 
 		if(slow_update_cnt==0){
 			if(m365_to_display.mode & 0x40){
-				//TODO m365_to_display.speed = VescToSTM_get_speed()*2.2369;
+				m365_to_display.speed = ceilf(mc_interface_get_speed()*2.2369);
 			}else{
-				//TODO m365_to_display.speed = VescToSTM_get_speed()*3.6;
+				m365_to_display.speed = ceilf(mc_interface_get_speed()*3.6);
 
 			}
-			//TODO m365_to_display.speed *= DIR_MUL;
-			//TODO int temp = utils_map(VescToSTM_get_battery_level(0), 0, 1, 0, 100);
-			//TODO m365_to_display.battery = temp>100?100:temp;
-			m365_to_display.beep=0;
-			//m365_to_display.faultcode=pMCI[M1]->pSTM->hFaultOccurred;
+			int temp = utils_map(mc_interface_get_battery_level(0), 0, 1, 0, 100);
+			m365_to_display.battery = temp>100?100:temp;
+			m365_to_display.beep = 0;
+			m365_to_display.faultcode = mc_interface_get_fault();
 
 		}else{
 			slow_update_cnt++;
