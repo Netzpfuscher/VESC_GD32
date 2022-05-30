@@ -39,7 +39,7 @@ void app_set_configuration(app_configuration *conf) {
 
 
 	utils_truncate_number_int((int*)&appconf.app_adc_conf.update_rate_hz, 1, 200);
-
+#ifndef DEBUG_ISR
 	switch (appconf.app_to_use) {
 		case APP_UART:
 			if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING){
@@ -69,6 +69,7 @@ void app_set_configuration(app_configuration *conf) {
 		default:
 			break;
 	}
+#endif
 	old_app = appconf.app_to_use;
 }
 

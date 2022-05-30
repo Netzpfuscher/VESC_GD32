@@ -61,6 +61,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
+#include "hw.h"
 
 /** @addtogroup STM32F1xx_HAL_Driver
   * @{
@@ -1177,7 +1178,7 @@ uint32_t HAL_RCC_GetSysClockFreq(void)
 uint32_t HAL_RCC_GetHCLKFreq(void)
 {
   //return SystemCoreClock;
-  return 120000000;   ///Achtung
+  return CPU_MHZ;   ///Achtung
 }
 
 /**

@@ -26,7 +26,8 @@
 
 //RTOS
 #define HEAP_SIZE_KB 50
-#define CPU_MHZ  (120*1000000)
+#define CPU_MHZ  		(120*1000000)
+#define CPU_PLL_MUL     RCC_PLL_MUL5
 #define MS_TO_TICKS( xTimeInMs ) ( ( TickType_t ) ( ( ( TickType_t ) ( xTimeInMs ) * ( TickType_t ) configTICK_RATE_HZ ) / ( TickType_t ) 1000 ) )
 
 #define PRIO_BELOW_NORMAL 4
@@ -143,6 +144,8 @@
 #define CYCCNTENA       (1<<0)
 #define DWT_CYCCNT      ((volatile uint32_t *)0xE0001004)
 #define CPU_CYCLES      *DWT_CYCCNT
+
+//#define DEBUG_ISR
 
 
 #endif /* APPLICATION_USER_VESC_INC_HW_H_ */

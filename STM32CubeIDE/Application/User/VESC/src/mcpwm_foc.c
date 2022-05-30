@@ -1784,8 +1784,9 @@ void mcpwm_foc_tim_sample_int_handler(void) {
 void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 	(void)p;
 	(void)flags;
-
-	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+#ifdef DEBUG_ISR
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+#endif
 	static int skip = 0;
 	if (++skip == FOC_CONTROL_LOOP_FREQ_DIVIDER) {
 		skip = 0;
@@ -1841,7 +1842,9 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 	}
 #else
 	if (is_v7) {
-		//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+#ifdef DEBUG_ISR
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+#endif
 		return;
 	}
 #endif
@@ -2487,7 +2490,9 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 
 	m_isr_motor = 0;
 	m_last_adc_isr_duration = (*DWT_CYCCNT - cycles);
-	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+#ifdef DEBUG_ISR
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+#endif
 	//m_last_adc_isr_duration = timer_seconds_elapsed_since(t_start);
 }
 
