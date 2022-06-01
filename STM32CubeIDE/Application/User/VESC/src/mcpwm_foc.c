@@ -45,6 +45,7 @@
 #include "task_init.h"
 #include "main.h"
 #include "mcconf_default.h"
+#include "rcm.h"
 
 // Private variables
 static volatile bool m_dccal_done = false;
@@ -52,6 +53,10 @@ static volatile float m_last_adc_isr_duration;
 static volatile bool m_init_done = false;
 static volatile motor_all_state_t m_motor_1;
 static volatile int m_isr_motor = 0;
+
+volatile uint16_t reg_adc[2];
+
+
 
 // Private functions
 static void control_current(motor_all_state_t *motor, float dt);
@@ -262,6 +267,11 @@ void mcpwm_foc_init(mc_configuration *conf_m1, mc_configuration *conf_m2) {
 	LL_ADC_Enable( ADC1 );
 	LL_ADC_Enable( ADC2 );
 	LL_ADC_Enable( ADC3 );
+
+
+	rcm_init();
+	rcm_add_conversion(ADC3, 0, ADC_SAMPLETIME_41CYCLES_5, &reg_adc[0]);
+	rcm_add_conversion(ADC3, 2, ADC_SAMPLETIME_41CYCLES_5, &reg_adc[1]);
 
 	//LL_ADC_ClearFlag_JEOS( ADC1);
 	//LL_ADC_EnableIT_JEOS( ADC1 );
@@ -2801,6 +2811,8 @@ static void input_current_offset_measurement(void) {
 #endif
 }
 
+
+
 void timer_thread(void * arg){
 	(void)arg;
 
@@ -2813,6 +2825,7 @@ void timer_thread(void * arg){
 		}
 
 		timer_update((motor_all_state_t*)&m_motor_1, dt);
+
 
 		input_current_offset_measurement();
 

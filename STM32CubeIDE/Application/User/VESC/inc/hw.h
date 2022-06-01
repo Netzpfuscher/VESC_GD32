@@ -62,8 +62,9 @@
 
 
 // NTC Termistors
+#define ADC_IND_TEMP_MOS 		RCM[0].result
 #define NTC_RES(adc_val)		((4095.0 * 10000.0) / (4095 - adc_val) - 10000.0)
-#define NTC_TEMP(adc_ind)		(1.0 / ((logf(NTC_RES(ADC3->JDR3) / 10000.0) / 3380.0) + (1.0 / 298.15)) - 273.15)
+#define NTC_TEMP(adc_ind)		(1.0 / ((logf(NTC_RES(reg_adc[0]) / 10000.0) / 3380.0) + (1.0 / 298.15)) - 273.15)
 #define MOTOR_TEMP_LPF 0.1
 
 //Hall
@@ -89,7 +90,7 @@
 #define ADC_V_L2				ADC2->JDR2
 #define ADC_V_L3				ADC1->JDR3
 
-#define GET_INPUT_VOLTAGE() ((float)ADC3->JDR2*0.013927)
+#define GET_INPUT_VOLTAGE() ((float)reg_adc[1]*0.013927)
 #define VIN_R1 22000.0
 #define VIN_R2 2000.0
 #define ADC_VOLTS_PH_FACTOR 1.0
@@ -145,7 +146,7 @@
 #define DWT_CYCCNT      ((volatile uint32_t *)0xE0001004)
 #define CPU_CYCLES      *DWT_CYCCNT
 
-//#define DEBUG_ISR
+#define DEBUG_ISR
 
 
 #endif /* APPLICATION_USER_VESC_INC_HW_H_ */

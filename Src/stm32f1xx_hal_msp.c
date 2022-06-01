@@ -131,22 +131,6 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(PHASE_C_V_GPIO_Port, &GPIO_InitStruct);
 
-    /* ADC1 DMA Init */
-    /* ADC1 Init */
-    hdma_adc1.Instance = DMA1_Channel1;
-    hdma_adc1.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    hdma_adc1.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_adc1.Init.MemInc = DMA_MINC_DISABLE;
-    hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-    hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-    hdma_adc1.Init.Mode = DMA_CIRCULAR;
-    hdma_adc1.Init.Priority = DMA_PRIORITY_LOW;
-    if (HAL_DMA_Init(&hdma_adc1) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    __HAL_LINKDMA(hadc,DMA_Handle,hdma_adc1);
 
   /* USER CODE BEGIN ADC1_MspInit 1 */
 
@@ -184,6 +168,22 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
         PA4     ------> ADC2_IN4
         PA5     ------> ADC2_IN5
         */
+        __HAL_RCC_DMA1_CLK_ENABLE();
+        /* ADC3 Init */
+        hdma_adc3.Instance = DMA1_Channel1;
+        hdma_adc3.Init.Direction = DMA_PERIPH_TO_MEMORY;
+        hdma_adc3.Init.PeriphInc = DMA_PINC_DISABLE;
+        hdma_adc3.Init.MemInc = DMA_MINC_DISABLE;
+        hdma_adc3.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+        hdma_adc3.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+        hdma_adc3.Init.Mode = DMA_CIRCULAR;
+        hdma_adc3.Init.Priority = DMA_PRIORITY_LOW;
+        if (HAL_DMA_Init(&hdma_adc3) != HAL_OK)
+        {
+          Error_Handler();
+        }
+
+        __HAL_LINKDMA(hadc,DMA_Handle,hdma_adc3);
 
   /* USER CODE BEGIN ADC2_MspInit 1 */
 
