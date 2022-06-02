@@ -3012,7 +3012,7 @@ void hfi_thread(void * arg){
 void pid_thread(void * arg){
 	(void)arg;
 
-	//uint32_t last_time = timer_time_now();
+	uint32_t last_time = xTaskGetTickCount();
 
 	for(;;) {
 		if (pid_thd_stop) {
@@ -3033,11 +3033,10 @@ void pid_thread(void * arg){
 		}
 		vTaskDelay(ticks);
 
-		//float dt = timer_seconds_elapsed_since(last_time);
-		//last_time = timer_time_now();
-		float dt = ((float)ticks/2.0/1000.0);
+		float dt = UTILS_AGE_S(last_time);
+		last_time = xTaskGetTickCount();
 
-		//foc_run_pid_control_pos(encoder_index_found(), dt, (motor_all_state_t*)&m_motor_1);
+		foc_run_pid_control_pos(0, dt, (motor_all_state_t*)&m_motor_1);
 		foc_run_pid_control_speed(dt, (motor_all_state_t*)&m_motor_1);
 
 	}
