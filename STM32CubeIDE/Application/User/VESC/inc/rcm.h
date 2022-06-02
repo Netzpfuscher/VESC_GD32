@@ -9,6 +9,7 @@
 #define RCM_H
 
 #include "main.h"
+#include "FreeRTOS.h"
 
 typedef struct
 {
@@ -16,6 +17,8 @@ typedef struct
   uint8_t  channel;
   uint32_t sampling_time;
   volatile uint16_t * result_ptr;
+  TickType_t last_time;
+  float dt;
 } RegConv_t;
 
 typedef void* rcm_handle;

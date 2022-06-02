@@ -154,23 +154,32 @@ void commands_send_rotor_pos(PACKET_STATE_t * phandle, float rotor_pos) {
 }
 
 void send_position(PACKET_STATE_t * phandle){
+
+	if(phandle->port->half_duplex==true && (xTaskGetTickCount() % 100)) return;
 	switch (display_position_mode) {
 	case DISP_POS_MODE_ENCODER:
-		if(phandle->port->half_duplex==true && (xTaskGetTickCount() % 100)) break;
-		commands_send_rotor_pos(phandle, mc_interface_get_pid_pos_now());
-
+		//commands_send_rotor_pos(phandle,encoder_read_deg());
 		break;
-//	case DISP_POS_MODE_OBSERVER:
-//
-//		break;
-//
-//	case DISP_POS_MODE_PID_POS_ERROR:
-//		//commands_send_rotor_pos(utils_angle_difference(mc_interface_get_pid_pos_set(), mc_interface_get_pid_pos_now()));
-//		break;
-//
+
+	case DISP_POS_MODE_PID_POS:
+		commands_send_rotor_pos(phandle,mc_interface_get_pid_pos_now());
+		break;
+
+	case DISP_POS_MODE_PID_POS_ERROR:
+		commands_send_rotor_pos(phandle,utils_angle_difference(mc_interface_get_pid_pos_set(), mc_interface_get_pid_pos_now()));
+		break;
+	case DISP_POS_MODE_OBSERVER:
+				commands_send_rotor_pos(phandle,mcpwm_foc_get_phase_observer());
+				break;
+
+	case DISP_POS_MODE_ENCODER_OBSERVER_ERROR:
+		commands_send_rotor_pos(phandle,utils_angle_difference(mcpwm_foc_get_phase_observer(), mcpwm_foc_get_phase_encoder()));
+		break;
+
 	default:
 		break;
 	}
+
 }
 
 
