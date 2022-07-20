@@ -270,8 +270,8 @@ void mcpwm_foc_init(mc_configuration *conf_m1, mc_configuration *conf_m2) {
 
 
 	rcm_init();
-	rcm_add_conversion(ADC3, 0, ADC_SAMPLETIME_41CYCLES_5, &reg_adc[0]);
-	rcm_add_conversion(ADC3, 2, ADC_SAMPLETIME_41CYCLES_5, &reg_adc[1]);
+	rcm_add_conversion(ADC3, 0, ADC_SAMPLETIME_41CYCLES_5, MS_TO_TICKS(500) , &reg_adc[0]);
+	rcm_add_conversion(ADC3, 2, ADC_SAMPLETIME_41CYCLES_5, 0, &reg_adc[1]);
 
 	//LL_ADC_ClearFlag_JEOS( ADC1);
 	//LL_ADC_EnableIT_JEOS( ADC1 );
@@ -3465,9 +3465,9 @@ static void update_valpha_vbeta(motor_all_state_t *motor, float mod_alpha, float
 		ofs_volt = conf_now->foc_offsets_voltage;
 	}
 
-	Va = (GET_VOLT1() - ofs_volt[0]) * ((VIN_R1 + VIN_R2) / VIN_R2) * ADC_VOLTS_PH_FACTOR;
-	Vb = (GET_VOLT2() - ofs_volt[1]) * ((VIN_R1 + VIN_R2) / VIN_R2) * ADC_VOLTS_PH_FACTOR;
-	Vc = (GET_VOLT3() - ofs_volt[2]) * ((VIN_R1 + VIN_R2) / VIN_R2) * ADC_VOLTS_PH_FACTOR;
+	Va = (GET_VOLT1() - ofs_volt[0]) * ((VPHASE_R1 + VPHASE_R2) / VPHASE_R2) * ADC_VOLTS_PH_FACTOR;
+	Vb = (GET_VOLT2() - ofs_volt[1]) * ((VPHASE_R1 + VPHASE_R2) / VPHASE_R2) * ADC_VOLTS_PH_FACTOR;
+	Vc = (GET_VOLT3() - ofs_volt[2]) * ((VPHASE_R1 + VPHASE_R2) / VPHASE_R2) * ADC_VOLTS_PH_FACTOR;
 
 
 	// Deadtime compensation

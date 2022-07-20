@@ -20,7 +20,7 @@ void rcm_init(void){
 	xTaskCreate(rcm_thread, "tskRCM", 256, &dll, PRIO_NORMAL, NULL);
 }
 
-rcm_handle rcm_add_conversion(ADC_TypeDef * adc, uint8_t channel, uint32_t sampling_time, volatile uint16_t * result_ptr){
+rcm_handle rcm_add_conversion(ADC_TypeDef * adc, uint8_t channel, uint32_t sampling_time, TickType_t sample_delay, volatile uint16_t * result_ptr){
 	if(adc == NULL || result_ptr == NULL) return NULL;
 
 	RegConv_t * conv = pvPortMalloc(sizeof(RegConv_t));
@@ -32,6 +32,7 @@ rcm_handle rcm_add_conversion(ADC_TypeDef * adc, uint8_t channel, uint32_t sampl
 	conv->result_ptr = result_ptr;
 	conv->dt = 0.0;
 	conv->last_time = xTaskGetTickCount();
+	conv->sample_delay = sample_delay;
 
 	LL_ADC_SetChannelSamplingTime ( adc, __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel) ,sampling_time);
 
@@ -47,8 +48,8 @@ void rcm_thread(void * arg){
 		Node_t * next = dll_get_next(dll_ptr);
 		if(next){
 			RegConv_t * conv = next->data;
-			if(conv->result_ptr){
 
+			if(conv->result_ptr && ((conv->last_time + conv->sample_delay) < xTaskGetTickCount())){
 				LL_ADC_REG_SetSequencerRanks(conv->regADC,LL_ADC_REG_RANK_1,__LL_ADC_DECIMAL_NB_TO_CHANNEL(conv->channel));
 				LL_ADC_REG_ReadConversionData12(conv->regADC );
 				LL_ADC_REG_StartConversionSWStart(conv->regADC);

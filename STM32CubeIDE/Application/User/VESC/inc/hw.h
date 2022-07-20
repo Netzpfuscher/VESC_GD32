@@ -77,6 +77,10 @@
 #define RSHUNT                  0.00200
 #define AMPLIFICATION_GAIN      8.00
 #define FAC_CURRENT 			(-1.0/((2048.0*RSHUNT*AMPLIFICATION_GAIN)/(3.3/2)))
+#define ADC_INJ_CH_A			ADC_CHANNEL_4
+#define ADC_INJ_CH_B			ADC_CHANNEL_5
+#define ADC_INJ_CH_C			ADC_CHANNEL_3
+
 #define GET_CURRENT1() 			(ADC3->JDR1)
 #define GET_CURRENT2() 			(ADC1->JDR1)
 #define GET_CURRENT3() 			(ADC2->JDR1)
@@ -90,11 +94,18 @@
 #define ADC_V_L2				ADC2->JDR2
 #define ADC_V_L3				ADC1->JDR3
 
-#define GET_INPUT_VOLTAGE() ((float)reg_adc[1]*0.013927)
-#define VIN_R1 22000.0
-#define VIN_R2 2000.0
+
+//Voltage Dividers
+#define VBUS_R1 10000000.0
+#define VBUS_R2 620000.0
+#define VPHASE_R1 22000.0
+#define VPHASE_R2 2000.0
+
 #define ADC_VOLTS_PH_FACTOR 1.0
 #define ADC_VOLTS_INPUT_FACTOR 1.0
+
+#define GET_INPUT_VOLTAGE() 	(((float)reg_adc[1] / 4096.0 * V_REG) * ((VBUS_R1 + VBUS_R2) / VBUS_R2) * ADC_VOLTS_INPUT_FACTOR)
+
 
 //Limits
 // Setting limits

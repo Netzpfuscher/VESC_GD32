@@ -16,6 +16,7 @@ typedef struct
   ADC_TypeDef * regADC;
   uint8_t  channel;
   uint32_t sampling_time;
+  TickType_t sample_delay;
   volatile uint16_t * result_ptr;
   TickType_t last_time;
   float dt;
@@ -25,6 +26,6 @@ typedef void* rcm_handle;
 
 void rcm_init(void);
 
-rcm_handle rcm_add_conversion(ADC_TypeDef * adc, uint8_t channel, uint32_t sampling_time, volatile uint16_t * result_ptr);
+rcm_handle rcm_add_conversion(ADC_TypeDef * adc, uint8_t channel, uint32_t sampling_time, TickType_t sample_delay, volatile uint16_t * result_ptr);
 
 #endif /* APPLICATION_USER_VESC_INC_RCM_H_ */
