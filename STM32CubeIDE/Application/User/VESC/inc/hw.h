@@ -157,7 +157,7 @@
 #define DWT_CYCCNT      ((volatile uint32_t *)0xE0001004)
 #define CPU_CYCLES      *DWT_CYCCNT
 
-#define DEBUG_ISR
+//#define DEBUG_ISR
 
 
 #endif /* APPLICATION_USER_VESC_INC_HW_H_ */
