@@ -299,18 +299,18 @@ void app_adc_button_callback(eButtonEvent evt){
 		switch(m365_to_display.mode){
 			case M365_MODE_DRIVE:
 				app_adc_speed_mode(M365_MODE_SPORT);
-				kmh = 1337;
+				kmh = MODE_SPORT_SPEED;
 				break;
 			case M365_MODE_SPORT:
 				app_adc_speed_mode(M365_MODE_SLOW);
-				kmh = 10;
+				kmh = MODE_SLOW_SPEED;
 				break;
 			case M365_MODE_SLOW:
 				app_adc_speed_mode(M365_MODE_DRIVE);
-				kmh = 25;
+				kmh = MODE_DRIVE_SPEED;
 				break;
 		}
-		 if(kmh==1337){
+		 if(kmh==KMH_NO_LIMIT){
 			 conf->l_max_erpm = conf_max_erpm;
 		}else{
 			conf->l_max_erpm = (((float)kmh * 1000.0 / 60.0)/(conf->si_wheel_diameter*M_PI)) * conf->si_motor_poles/2.0 * conf->si_gear_ratio;
