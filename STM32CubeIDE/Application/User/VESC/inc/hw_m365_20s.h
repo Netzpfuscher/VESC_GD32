@@ -11,14 +11,68 @@
 
 #define HW_NAME					"GD32_m365"
 
-//COMM
-#define VESC_USART_DMA													     huart3
-#define VESC_USART_TX_DMA													 hdma_usart3_tx
-#define VESC_USART_RX_DMA													 hdma_usart3_rx
+//Injected configuration
 
-#define APP_USART_DMA														 huart1
-#define APP_USART_TX_DMA												     hdma_usart1_tx
-#define APP_USART_RX_DMA													 hdma_usart1_rx
+//ADC1
+#define ADC1_INJ_1_ENABLED		1
+#define ADC1_INJ_1_CH			ADC_CHANNEL_4
+#define ADC1_INJ_1_TIM			ADC_SAMPLETIME_1CYCLE_5
+
+#define ADC1_INJ_2_ENABLED		1
+#define ADC1_INJ_2_CH			ADC_CHANNEL_6
+#define ADC1_INJ_2_TIM			ADC_SAMPLETIME_13CYCLES_5
+
+#define ADC1_INJ_3_ENABLED		1
+#define ADC1_INJ_3_CH			ADC_CHANNEL_9
+#define ADC1_INJ_3_TIM			ADC_SAMPLETIME_13CYCLES_5
+
+#define ADC1_INJ_4_ENABLED		0
+#define ADC1_INJ_4_CH			ADC_CHANNEL_0
+#define ADC1_INJ_4_TIM			ADC_SAMPLETIME_1CYCLE_5
+
+//ADC2
+#define ADC2_INJ_1_ENABLED		1
+#define ADC2_INJ_1_CH			ADC_CHANNEL_5
+#define ADC2_INJ_1_TIM			ADC_SAMPLETIME_1CYCLE_5
+
+#define ADC2_INJ_2_ENABLED		1
+#define ADC2_INJ_2_CH			ADC_CHANNEL_7
+#define ADC2_INJ_2_TIM			ADC_SAMPLETIME_13CYCLES_5
+
+#define ADC2_INJ_3_ENABLED		0
+#define ADC2_INJ_3_CH			ADC_CHANNEL_0
+#define ADC2_INJ_3_TIM			ADC_SAMPLETIME_1CYCLE_5
+
+#define ADC2_INJ_4_ENABLED		0
+#define ADC2_INJ_4_CH			ADC_CHANNEL_0
+#define ADC2_INJ_4_TIM			ADC_SAMPLETIME_1CYCLE_5
+
+//ADC3
+#define ADC3_INJ_1_ENABLED		1
+#define ADC3_INJ_1_CH			ADC_CHANNEL_3
+#define ADC3_INJ_1_TIM			ADC_SAMPLETIME_1CYCLE_5
+
+#define ADC3_INJ_2_ENABLED		0
+#define ADC3_INJ_2_CH			ADC_CHANNEL_0
+#define ADC3_INJ_2_TIM			ADC_SAMPLETIME_1CYCLE_5
+
+#define ADC3_INJ_3_ENABLED		0
+#define ADC3_INJ_3_CH			ADC_CHANNEL_0
+#define ADC3_INJ_3_TIM			ADC_SAMPLETIME_1CYCLE_5
+
+#define ADC3_INJ_4_ENABLED		0
+#define ADC3_INJ_4_CH			ADC_CHANNEL_0
+#define ADC3_INJ_4_TIM			ADC_SAMPLETIME_1CYCLE_5
+
+
+//COMM
+#define VESC_USART_DMA			huart3
+#define VESC_USART_TX_DMA		hdma_usart3_tx
+#define VESC_USART_RX_DMA		hdma_usart3_rx
+
+#define APP_USART_DMA			huart1
+#define APP_USART_TX_DMA		hdma_usart1_tx
+#define APP_USART_RX_DMA		hdma_usart1_rx
 
 
 //Global

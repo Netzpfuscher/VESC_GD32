@@ -323,7 +323,6 @@ static void MX_ADC1_Init(void)
   /* USER CODE END ADC1_Init 0 */
 
   ADC_InjectionConfTypeDef sConfigInjected = {0};
-  ADC_ChannelConfTypeDef sConfig = {0};
 
   /* USER CODE BEGIN ADC1_Init 1 */
 
@@ -341,37 +340,73 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure Injected Channel
-  */
-  sConfigInjected.InjectedChannel = ADC_CHANNEL_4;
-  sConfigInjected.InjectedRank = 1;
-  sConfigInjected.InjectedNbrOfConversion = 3;
-  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+
+  sConfigInjected.InjectedRank = 0;
+
+ //Counting number of conversions
+  sConfigInjected.InjectedNbrOfConversion = 0;
+#if ADC1_INJ_1_ENABLED
+  sConfigInjected.InjectedNbrOfConversion++;
+#endif
+#if ADC1_INJ_2_ENABLED
+  sConfigInjected.InjectedNbrOfConversion++;
+#endif
+#if ADC1_INJ_3_ENABLED
+  sConfigInjected.InjectedNbrOfConversion++;
+#endif
+#if ADC1_INJ_4_ENABLED
+  sConfigInjected.InjectedNbrOfConversion++;
+#endif
+
   sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJECCONV_T1_TRGO;
   sConfigInjected.AutoInjectedConv = DISABLE;
   sConfigInjected.InjectedDiscontinuousConvMode = DISABLE;
   sConfigInjected.InjectedOffset = 0;
-  if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
-  {
-    Error_Handler();
-  }
+
+#if ADC1_INJ_1_ENABLED
   /** Configure Injected Channel
   */
-  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_13CYCLES_5;
-  sConfigInjected.InjectedRank = 2;
-  sConfigInjected.InjectedChannel = ADC_CHANNEL_6;
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC1_INJ_1_CH;
+  sConfigInjected.InjectedSamplingTime = ADC1_INJ_1_TIM;
   if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
   {
     Error_Handler();
   }
+#endif
   /** Configure Injected Channel
   */
-  sConfigInjected.InjectedRank = 3;
-  sConfigInjected.InjectedChannel = ADC_CHANNEL_9;
+#if ADC1_INJ_2_ENABLED
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC1_INJ_2_CH;
+  sConfigInjected.InjectedSamplingTime = ADC1_INJ_2_TIM;
   if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
   {
     Error_Handler();
   }
+#endif
+#if ADC1_INJ_3_ENABLED
+  /** Configure Injected Channel
+  */
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC1_INJ_3_CH;
+  sConfigInjected.InjectedSamplingTime = ADC1_INJ_3_TIM;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#endif
+#if ADC1_INJ_4_ENABLED
+  /** Configure Injected Channel
+  */
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC1_INJ_4_CH;
+  sConfigInjected.InjectedSamplingTime = ADC1_INJ_4_TIM;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#endif
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
@@ -408,40 +443,74 @@ static void MX_ADC2_Init(void)
   {
     Error_Handler();
   }
-  /** Configure Injected Channel
-  */
-  sConfigInjected.InjectedChannel = ADC_CHANNEL_5;
-  sConfigInjected.InjectedRank = 1;
-  sConfigInjected.InjectedNbrOfConversion = 2;
-  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+
+
+  sConfigInjected.InjectedRank = 0;
+
+ //Counting number of conversions
+  sConfigInjected.InjectedNbrOfConversion = 0;
+#if ADC2_INJ_1_ENABLED
+  sConfigInjected.InjectedNbrOfConversion++;
+#endif
+#if ADC2_INJ_2_ENABLED
+  sConfigInjected.InjectedNbrOfConversion++;
+#endif
+#if ADC2_INJ_3_ENABLED
+  sConfigInjected.InjectedNbrOfConversion++;
+#endif
+#if ADC2_INJ_4_ENABLED
+  sConfigInjected.InjectedNbrOfConversion++;
+#endif
+
   sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJECCONV_T1_TRGO;
   sConfigInjected.AutoInjectedConv = DISABLE;
   sConfigInjected.InjectedDiscontinuousConvMode = DISABLE;
   sConfigInjected.InjectedOffset = 0;
-  if (HAL_ADCEx_InjectedConfigChannel(&hadc2, &sConfigInjected) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure Injected Channel
-  */
-  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_13CYCLES_5;
-  sConfigInjected.InjectedChannel = ADC_CHANNEL_7;
-  sConfigInjected.InjectedRank = 2;
-  if (HAL_ADCEx_InjectedConfigChannel(&hadc2, &sConfigInjected) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure Injected Channel
-  */
-//  sConfigInjected.InjectedChannel = ADC_CHANNEL_5;
-//  sConfigInjected.InjectedRank = 3;
-//  if (HAL_ADCEx_InjectedConfigChannel(&hadc2, &sConfigInjected) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
-  /* USER CODE BEGIN ADC2_Init 2 */
 
-  /* USER CODE END ADC2_Init 2 */
+#if ADC2_INJ_1_ENABLED
+  /** Configure Injected Channel
+  */
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC2_INJ_1_CH;
+  sConfigInjected.InjectedSamplingTime = ADC2_INJ_1_TIM;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc2, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#endif
+#if ADC2_INJ_2_ENABLED
+  /** Configure Injected Channel
+  */
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC2_INJ_2_CH;
+  sConfigInjected.InjectedSamplingTime = ADC2_INJ_2_TIM;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc2, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#endif
+#if ADC2_INJ_3_ENABLED
+  /** Configure Injected Channel
+  */
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC2_INJ_3_CH;
+  sConfigInjected.InjectedSamplingTime = ADC2_INJ_3_TIM;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc2, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#endif
+#if ADC2_INJ_4_ENABLED
+  /** Configure Injected Channel
+  */
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC2_INJ_4_CH;
+  sConfigInjected.InjectedSamplingTime = ADC2_INJ_4_TIM;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc2, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#endif
 
 }
 
@@ -481,42 +550,73 @@ static void MX_ADC3_Init(void)
 	 Error_Handler();
 	}
 
+	  sConfigInjected.InjectedRank = 0;
+
+	 //Counting number of conversions
+	  sConfigInjected.InjectedNbrOfConversion = 0;
+	#if ADC3_INJ_1_ENABLED
+	  sConfigInjected.InjectedNbrOfConversion++;
+	#endif
+	#if ADC3_INJ_2_ENABLED
+	  sConfigInjected.InjectedNbrOfConversion++;
+	#endif
+	#if ADC3_INJ_3_ENABLED
+	  sConfigInjected.InjectedNbrOfConversion++;
+	#endif
+	#if ADC3_INJ_4_ENABLED
+	  sConfigInjected.InjectedNbrOfConversion++;
+	#endif
+
+	  sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJECCONV_T1_TRGO;
+	  sConfigInjected.AutoInjectedConv = DISABLE;
+	  sConfigInjected.InjectedDiscontinuousConvMode = DISABLE;
+	  sConfigInjected.InjectedOffset = 0;
 
 
+#if ADC3_INJ_1_ENABLED
   /** Configure Injected Channel
   */
-  sConfigInjected.InjectedChannel = ADC_CHANNEL_3;
-  sConfigInjected.InjectedRank = 1;
-  sConfigInjected.InjectedNbrOfConversion = 1;
-  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJECCONV_T1_TRGO;
-  sConfigInjected.AutoInjectedConv = DISABLE;
-  sConfigInjected.InjectedDiscontinuousConvMode = DISABLE;
-  sConfigInjected.InjectedOffset = 0;
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC3_INJ_1_CH;
+  sConfigInjected.InjectedSamplingTime = ADC3_INJ_1_TIM;
   if (HAL_ADCEx_InjectedConfigChannel(&hadc3, &sConfigInjected) != HAL_OK)
   {
     Error_Handler();
   }
+#endif
+#if ADC3_INJ_2_ENABLED
   /** Configure Injected Channel
   */
-//  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_13CYCLES_5;
-//  sConfigInjected.InjectedChannel = ADC_CHANNEL_2;
-//  sConfigInjected.InjectedRank = 2;
-//  if (HAL_ADCEx_InjectedConfigChannel(&hadc3, &sConfigInjected) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC3_INJ_2_CH;
+  sConfigInjected.InjectedSamplingTime = ADC3_INJ_2_TIM;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc3, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#endif
+#if ADC3_INJ_3_ENABLED
   /** Configure Injected Channel
   */
-//  sConfigInjected.InjectedChannel = ADC_CHANNEL_0;
-//  sConfigInjected.InjectedRank = 3;
-//  if (HAL_ADCEx_InjectedConfigChannel(&hadc3, &sConfigInjected) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
-  /* USER CODE BEGIN ADC2_Init 2 */
-
-  /* USER CODE END ADC2_Init 2 */
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC3_INJ_3_CH;
+  sConfigInjected.InjectedSamplingTime = ADC3_INJ_3_TIM;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc3, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#endif
+#if ADC3_INJ_4_ENABLED
+  /** Configure Injected Channel
+  */
+  sConfigInjected.InjectedRank++;
+  sConfigInjected.InjectedChannel = ADC3_INJ_4_CH;
+  sConfigInjected.InjectedSamplingTime = ADC3_INJ_4_TIM;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc3, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#endif
 
 }
 
