@@ -25,6 +25,9 @@
 #include "appconf_default.h"
 #include "packet.h"
 
+#define CODE_IND_QML	0
+#define CODE_IND_LISP	1
+#define FLASH_COMPLETE  1
 
 #define ADDR_FLASH_PAGE_126    ((uint32_t)0x08000000+(APP_PAGE*PAGE_SIZE))
 #define ADDR_FLASH_PAGE_127    ((uint32_t)0x08000000+(CONF_PAGE*PAGE_SIZE))
@@ -45,6 +48,11 @@ bool conf_general_store_app_configuration(app_configuration *conf);
 void conf_general_mcconf_hw_limits(mc_configuration *mcconf);
 int conf_general_detect_apply_all_foc_can(bool detect_can, float max_power_loss, float min_current_in, float max_current_in, float openloop_rpm, float sl_erpm, PACKET_STATE_t * phandle);
 bool conf_general_measure_flux_linkage_openloop(float current, float duty,float erpm_per_sec, float res, float ind, float *linkage,float *linkage_undriven, float *undriven_samples);
+
+uint16_t conf_general_write_code(int ind, uint32_t offset, uint8_t *data, uint32_t len);
+uint16_t conf_general_erase_code(int ind);
+uint8_t* conf_general_code_data(int ind);
+uint32_t conf_general_code_size(int ind);
 
 #endif /* CONF_GENERAL_H_ */
 

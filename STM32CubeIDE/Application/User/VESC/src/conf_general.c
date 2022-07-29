@@ -35,8 +35,12 @@
 #include "mcpwm_foc.h"
 #include "mempools.h"
 #include "timeout.h"
+#include "buffer.h"
 
 app_configuration appconf;
+
+#define LISP_SIZE	1024
+uint8_t lisp_memory[LISP_SIZE];
 
 int conf_general_autodetect_apply_sensors_foc(float current,
 		bool store_mcconf_on_success, bool send_mcconf_on_success) {
@@ -960,4 +964,31 @@ int conf_general_detect_apply_all_foc_can(bool detect_can, float max_power_loss,
 	mc_interface_select_motor_thread(motor_last);
 
 	return res;
+}
+
+uint16_t conf_general_write_code(int ind, uint32_t offset, uint8_t *data, uint32_t len) {
+	memcpy(lisp_memory + offset, data, len);
+	return 1;
+}
+
+uint16_t conf_general_erase_code(int ind) {
+#ifdef USE_LISPBM
+	if (ind == CODE_IND_LISP) {
+		//lispif_stop_lib();
+	}
+#endif
+	memset(lisp_memory,0,LISP_SIZE);
+	return FLASH_COMPLETE;
+}
+
+uint8_t* conf_general_code_data(int ind) {
+	return lisp_memory + 8;
+}
+
+uint32_t conf_general_code_size(int ind) {
+
+	uint8_t *base = lisp_memory;
+	int32_t index = 0;
+	return buffer_get_uint32(base, &index);
+
 }

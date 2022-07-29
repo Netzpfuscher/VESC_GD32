@@ -954,6 +954,93 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 					}
 				} break;
 
+				case COMM_GET_QML_UI_APP:
+				case COMM_LISP_READ_CODE: {
+					int32_t ind = 0;
+
+					int32_t len_qml = buffer_get_int32(data, &ind);
+					int32_t ofs_qml = buffer_get_int32(data, &ind);
+
+					uint8_t *qmlui_data = conf_general_code_data(CODE_IND_QML);
+					int32_t qmlui_len = conf_general_code_size(CODE_IND_QML);
+
+			#ifdef QMLUI_SOURCE_APP
+					qmlui_data = data_qml_app;
+					qmlui_len = DATA_QML_APP_SIZE;
+			#endif
+
+					if (packet_id == COMM_LISP_READ_CODE) {
+						qmlui_data = conf_general_code_data(CODE_IND_LISP);
+						qmlui_len = conf_general_code_size(CODE_IND_LISP);
+					}
+
+					if (!qmlui_data) {
+						ind = 0;
+						uint8_t send_buffer[PACKET_SIZE(20)];
+						uint8_t * buffer = send_buffer + PACKET_HEADER;
+						buffer[ind++] = packet_id;
+						buffer_append_int32(buffer, 0, &ind);
+						buffer_append_int32(buffer, 0, &ind);
+						packet_send_packet(send_buffer, ind, phandle);
+						break;
+					}
+
+					if ((len_qml + ofs_qml) > qmlui_len || len_qml > (PACKET_MAX_PL_LEN - 10)) {
+						break;
+					}
+
+
+					ind = 0;
+					uint8_t * send_buffer = pvPortMalloc(512 + PACKET_HEADER);
+					uint8_t * buffer = send_buffer + PACKET_HEADER;
+					buffer[ind++] = packet_id;
+					buffer_append_int32(buffer, qmlui_len, &ind);
+					buffer_append_int32(buffer, ofs_qml, &ind);
+					memcpy(buffer + ind, qmlui_data + ofs_qml, len_qml);
+					ind += len_qml;
+					packet_send_packet(send_buffer, ind, phandle);
+					vPortFree(send_buffer);
+
+				} break;
+
+				case COMM_QMLUI_ERASE:
+				case COMM_LISP_ERASE_CODE: {
+
+			#ifdef USE_LISPBM
+					if (packet_id == COMM_LISP_ERASE_CODE) {
+						//lispif_restart(false, false);
+					}
+			#endif
+
+					uint16_t flash_res = conf_general_erase_code(packet_id == COMM_QMLUI_ERASE ? CODE_IND_QML : CODE_IND_LISP);
+
+					int32_t ind = 0;
+					uint8_t send_buffer[PACKET_SIZE(20)];
+					uint8_t * buffer = send_buffer + PACKET_HEADER;
+					buffer[ind++] = packet_id;
+					buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
+					packet_send_packet(send_buffer, ind, phandle);
+				} break;
+
+				case COMM_QMLUI_WRITE:
+				case COMM_LISP_WRITE_CODE: {
+					int32_t ind = 0;
+					uint32_t qmlui_offset = buffer_get_uint32(data, &ind);
+
+					uint16_t flash_res = conf_general_write_code(packet_id == COMM_QMLUI_WRITE ? CODE_IND_QML : CODE_IND_LISP,
+							qmlui_offset, data + ind, len - ind);
+
+					SHUTDOWN_RESET();
+
+					ind = 0;
+					uint8_t send_buffer[PACKET_SIZE(20)];
+					uint8_t * buffer = send_buffer + PACKET_HEADER;
+					buffer[ind++] = packet_id;
+					buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
+					buffer_append_uint32(buffer, qmlui_offset, &ind);
+					packet_send_packet(send_buffer, ind, phandle);
+				} break;
+
 				case COMM_BMS_GET_VALUES:
 				case COMM_BMS_SET_CHARGE_ALLOWED:
 				case COMM_BMS_SET_BALANCE_OVERRIDE:

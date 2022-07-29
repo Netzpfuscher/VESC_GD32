@@ -14,6 +14,8 @@
 //Set hw here:
 #define HW_M365
 
+#include "hw_m365_core.h"
+
 
 #ifdef HW_M365
 #include "hw_m365.h"
