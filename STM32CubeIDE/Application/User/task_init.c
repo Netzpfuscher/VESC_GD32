@@ -26,6 +26,7 @@
 #include "app.h"
 #include "timeout.h"
 #include "shutdown.h"
+#include "lispif.h"
 
 unsigned long getRunTimeCounterValue(void){
 	return HAL_GetTick();
@@ -48,7 +49,9 @@ void task_init(){
 	app_adc_init_timer();
 	task_cli_init(&main_uart);
 	task_LED_init(&main_uart);  //Bring up the blinky
-
+	#ifdef USE_LISPBM
+		lispif_init();
+	#endif
 	shutdown_init();
 
 	timeout_init();

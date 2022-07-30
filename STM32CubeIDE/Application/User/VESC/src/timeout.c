@@ -190,7 +190,7 @@ bool timeout_had_IWDG_reset(void) {
 //		return true;
 //	}
 //
-//	return false;
+	return false;
 }
 
 void timeout_thread(void * arg){

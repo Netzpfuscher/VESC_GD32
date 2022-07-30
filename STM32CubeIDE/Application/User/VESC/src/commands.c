@@ -42,6 +42,8 @@
 #include "mempools.h"
 #include "timeout.h"
 #include "shutdown.h"
+#include "lispif.h"
+#include "task_init.h"
 
 
 static volatile int fw_version_sent_cnt = 0;
@@ -114,6 +116,41 @@ void commands_printf(PACKET_STATE_t * phandle, const char* format, ...) {
 	}
 }
 
+int commands_printf_lisp(PACKET_STATE_t * phandle, const char* format, ...) {
+	va_list arg;
+	va_start (arg, format);
+	int len;
+
+	uint8_t send_buffer[PACKET_SIZE(PRINTF_STACK_SIZE)];
+	uint8_t * print_buffer = send_buffer + PACKET_HEADER;
+
+	print_buffer[0] = COMM_LISP_PRINT;
+	len = vsnprintf((char*)print_buffer + 1, (PRINTF_STACK_SIZE - 1), format, arg);
+	va_end (arg);
+
+	int len_to_print = (len < (PRINTF_STACK_SIZE - 1)) ? len + 1 : PRINTF_STACK_SIZE;
+
+	if (len > 0) {
+		if (print_buffer[len_to_print - 1] == '\n') {
+			len_to_print--;
+		}
+
+		packet_send_packet((unsigned char*)send_buffer, len_to_print, phandle);
+	}
+
+
+	return len_to_print - 1;
+}
+
+void commands_send_app_data(unsigned char *data, unsigned int len) {
+	int32_t index = 0;
+	uint8_t send_buffer[PACKET_SIZE(PRINTF_STACK_SIZE)];
+	uint8_t * buffer = send_buffer + PACKET_HEADER;
+	buffer[index++] = COMM_CUSTOM_APP_DATA;
+	memcpy(buffer + index, data, len);
+	index += len;
+	packet_send_packet((unsigned char*)send_buffer, index, main_uart.phandle);
+}
 
 void commands_send_mcconf(COMM_PACKET_ID packet_id, mc_configuration *mcconf, PACKET_STATE_t * phandle) {
 	uint8_t * send_buffer = pvPortMalloc(512 + PACKET_HEADER);
@@ -1040,6 +1077,15 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 					buffer_append_uint32(buffer, qmlui_offset, &ind);
 					packet_send_packet(send_buffer, ind, phandle);
 				} break;
+
+				case COMM_LISP_SET_RUNNING:
+				case COMM_LISP_GET_STATS:
+				case COMM_LISP_REPL_CMD: {
+			#ifdef USE_LISPBM
+					lispif_process_cmd(data - 1, len + 1, phandle);
+			#endif
+					break;
+				}
 
 				case COMM_BMS_GET_VALUES:
 				case COMM_BMS_SET_CHARGE_ALLOWED:

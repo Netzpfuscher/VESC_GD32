@@ -38,7 +38,7 @@
 
 
 //RTOS
-#define HEAP_SIZE_KB 50
+#define HEAP_SIZE_KB 40
 #define CPU_MHZ  		(120*1000000)
 #define CPU_PLL_MUL     RCC_PLL_MUL5
 #define MS_TO_TICKS( xTimeInMs ) ( ( TickType_t ) ( ( ( TickType_t ) ( xTimeInMs ) * ( TickType_t ) configTICK_RATE_HZ ) / ( TickType_t ) 1000 ) )
