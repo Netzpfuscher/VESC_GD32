@@ -97,7 +97,7 @@ static volatile motor_if_state_t m_motor_2;
 #endif
 
 // Sampling variables
-#define ADC_SAMPLE_MAX_LEN		2000
+#define ADC_SAMPLE_MAX_LEN		512
 static volatile int16_t m_curr0_samples[ADC_SAMPLE_MAX_LEN];
 static volatile int16_t m_curr1_samples[ADC_SAMPLE_MAX_LEN];
 static volatile int16_t m_ph1_samples[ADC_SAMPLE_MAX_LEN];

@@ -29,13 +29,13 @@
 #include "task_init.h"
 #include "stdarg.h"
 
-#define HEAP_SIZE				128
-#define LISP_MEM_SIZE			LBM_MEMORY_SIZE_1K
-#define LISP_MEM_BITMAP_SIZE	LBM_MEMORY_BITMAP_SIZE_1K
+#define HEAP_SIZE				2048
+#define LISP_MEM_SIZE			LBM_MEMORY_SIZE_14K
+#define LISP_MEM_BITMAP_SIZE	LBM_MEMORY_BITMAP_SIZE_14K
 #define GC_STACK_SIZE			160
 #define PRINT_STACK_SIZE		128
-#define EXTENSION_STORAGE_SIZE	100
-#define VARIABLE_STORAGE_SIZE	32
+#define EXTENSION_STORAGE_SIZE	200
+#define VARIABLE_STORAGE_SIZE	64
 
 static lbm_cons_t heap[HEAP_SIZE] __attribute__ ((aligned (8)));
 static uint32_t memory_array[LISP_MEM_SIZE];

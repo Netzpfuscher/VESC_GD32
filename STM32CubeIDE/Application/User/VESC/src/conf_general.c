@@ -39,7 +39,7 @@
 
 app_configuration appconf;
 
-#define LISP_SIZE	1024
+#define LISP_SIZE	2048
 uint8_t lisp_memory[LISP_SIZE];
 
 int conf_general_autodetect_apply_sensors_foc(float current,
