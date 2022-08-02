@@ -31,6 +31,7 @@
 #include "app.h"
 #include "ninebot.h"
 #include "utils.h"
+#include "lispif.h"
 
 
 void putbuffer(unsigned char *buf, unsigned int len, port_str * port){
@@ -60,6 +61,8 @@ static uint32_t uart_get_write_pos(port_str * port){
 	return ( ((uint32_t)port->rx_buffer_size - port->uart->hdmarx->Instance->CNDTR) & ((uint32_t)port->rx_buffer_size -1));
 }
 
+
+
 void task_cli(void * argument)
 {
 	uint32_t rd_ptr=0;
@@ -79,6 +82,7 @@ void task_cli(void * argument)
 
 
 	app_check_timer();
+
 
 	uint16_t slow_update_cnt=0;
 
@@ -133,7 +137,7 @@ void task_cli(void * argument)
 
 void task_cli_init(port_str * port){
 	if(port->task_handle == NULL){
-		xTaskCreate(task_cli, "tskCLI", 320, (void*)port, PRIO_NORMAL, &port->task_handle);
+		xTaskCreate(task_cli, "tskCLI", 340, (void*)port, PRIO_NORMAL, &port->task_handle);
 	}
 }
 

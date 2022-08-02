@@ -124,7 +124,7 @@ static inline lbm_value cons_with_gc(lbm_value head, lbm_value tail, lbm_value r
 #define EVAL_CPS_WAIT_US   1536
 #define EVAL_CPS_MIN_SLEEP 200
 
-static uint32_t eval_cps_run_state = EVAL_CPS_STATE_INIT;
+volatile static uint32_t eval_cps_run_state = EVAL_CPS_STATE_INIT;
 volatile uint32_t eval_cps_next_state = EVAL_CPS_STATE_INIT;
 volatile uint32_t eval_cps_next_state_arg = 0;
 

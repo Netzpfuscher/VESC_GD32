@@ -39,8 +39,11 @@
 
 app_configuration appconf;
 
-#define LISP_SIZE	2048
-uint8_t lisp_memory[LISP_SIZE];
+//#define LISP_SIZE	2048
+//uint8_t lisp_memory[LISP_SIZE];
+
+#define LISP_MEMORY 0x08096000
+//#define QML_MEMORY
 
 int conf_general_autodetect_apply_sensors_foc(float current,
 		bool store_mcconf_on_success, bool send_mcconf_on_success) {
@@ -966,8 +969,101 @@ int conf_general_detect_apply_all_foc_can(bool detect_can, float max_power_loss,
 	return res;
 }
 
+FLASH_ProcessTypeDef pFlash;
+#define FLASH_PAGE_256_SIZE 0x1000
+HAL_StatusTypeDef HAL_FLASHEx_EraseGD(FLASH_EraseInitTypeDef *pEraseInit, uint32_t *PageError)
+{
+  HAL_StatusTypeDef status = HAL_ERROR;
+  uint32_t address = 0U;
+
+  /* Process Locked */
+  __HAL_LOCK(&pFlash);
+
+/* Check the parameters */
+  /* Page Erase requested on address located on bank1 */
+  /* Wait for last operation to be completed */
+  if (FLASH_WaitForLastOperation((uint32_t)FLASH_TIMEOUT_VALUE) == HAL_OK)
+  {
+	/*Initialization of PageError variable*/
+	*PageError = 0xFFFFFFFFU;
+
+	/* Erase page by page to be done*/
+	for(address = pEraseInit->PageAddress;
+		address < ((pEraseInit->NbPages * FLASH_PAGE_256_SIZE) + pEraseInit->PageAddress);
+		address += FLASH_PAGE_256_SIZE)
+	{
+	  FLASH_PageErase(address);
+
+	  /* Wait for last operation to be completed */
+	  status = FLASH_WaitForLastOperation((uint32_t)FLASH_TIMEOUT_VALUE);
+
+	  /* If the erase operation is completed, disable the PER Bit */
+	  CLEAR_BIT(FLASH->CR, FLASH_CR_PER);
+
+	  if (status != HAL_OK)
+	  {
+		/* In case of error, stop erase procedure and return the faulty address */
+		*PageError = address;
+		break;
+	  }
+	}
+  }
+
+
+  /* Process Unlocked */
+  __HAL_UNLOCK(&pFlash);
+
+  return status;
+}
+
+bool conf_general_erase_flash_code(void){
+
+	HAL_FLASH_Unlock();
+
+	uint32_t page_error = 0;
+	FLASH_EraseInitTypeDef s_eraseinit;
+	s_eraseinit.TypeErase   = FLASH_TYPEERASE_PAGES;
+	s_eraseinit.PageAddress = LISP_MEMORY;
+	s_eraseinit.NbPages     = 4;
+	HAL_FLASHEx_EraseGD(&s_eraseinit, &page_error);
+
+	HAL_FLASH_Lock();
+
+	return true;
+}
+
+bool conf_general_write_flcode(uint32_t base, uint8_t * data, uint16_t size){
+	uint32_t word;
+	uint8_t byte=0;
+	uint8_t * word_ptr = (uint8_t*)&word;
+	uint32_t flash_incr=0;
+
+	HAL_FLASH_Unlock();
+
+
+	for (unsigned int i = 0;i < size;i++) {
+
+		word_ptr[byte] = data[i];
+		byte++;
+		if(byte==4){
+			byte=0;
+			HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, base+(flash_incr*4), *((uint32_t*)word_ptr));
+			word=0;
+			flash_incr++;
+		}
+	}
+	if(byte!=0){
+		HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, base+(flash_incr*4), *((uint32_t*)word_ptr));
+	}
+	HAL_FLASH_Lock();
+	return true;
+}
+
+
+
 uint16_t conf_general_write_code(int ind, uint32_t offset, uint8_t *data, uint32_t len) {
-	memcpy(lisp_memory + offset, data, len);
+	conf_general_write_flcode(LISP_MEMORY + offset, data, len);
+	//memcpy(lisp_memory + offset, data, len);
 	return 1;
 }
 
@@ -977,17 +1073,20 @@ uint16_t conf_general_erase_code(int ind) {
 		//lispif_stop_lib();
 	}
 #endif
-	memset(lisp_memory,0,LISP_SIZE);
+	conf_general_erase_flash_code();
+	//memset(lisp_memory,0,LISP_SIZE);
 	return FLASH_COMPLETE;
 }
 
 uint8_t* conf_general_code_data(int ind) {
-	return lisp_memory + 8;
+	return (uint8_t*)LISP_MEMORY+8;
+	//return lisp_memory + 8;
 }
 
 uint32_t conf_general_code_size(int ind) {
 
-	uint8_t *base = lisp_memory;
+	//uint8_t *base = lisp_memory;
+	uint8_t *base = (uint8_t*)LISP_MEMORY;
 	int32_t index = 0;
 	return buffer_get_uint32(base, &index);
 

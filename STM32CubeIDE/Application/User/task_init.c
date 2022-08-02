@@ -45,13 +45,13 @@ port_str aux_uart = {	.uart = &APP_USART_DMA,
 						.task_handle = NULL
 };
 
+
+
 void task_init(){
 	app_adc_init_timer();
 	task_cli_init(&main_uart);
 	task_LED_init(&main_uart);  //Bring up the blinky
-	#ifdef USE_LISPBM
-		lispif_init();
-	#endif
+
 	shutdown_init();
 
 	timeout_init();

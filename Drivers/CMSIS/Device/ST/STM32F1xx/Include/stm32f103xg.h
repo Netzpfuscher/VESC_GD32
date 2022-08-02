@@ -11290,7 +11290,7 @@ typedef struct
 #define FLASH_OBR_nRST_STDBY_Pos            (4U)                               
 #define FLASH_OBR_nRST_STDBY_Msk            (0x1UL << FLASH_OBR_nRST_STDBY_Pos) /*!< 0x00000010 */
 #define FLASH_OBR_nRST_STDBY                FLASH_OBR_nRST_STDBY_Msk           /*!< nRST_STDBY */
-#define FLASH_OBR_BFB2_Pos                  (5U)                               
+#define FLASH_OBR_BFB2_Pos                  (5U)
 #define FLASH_OBR_BFB2_Msk                  (0x1UL << FLASH_OBR_BFB2_Pos)       /*!< 0x00000020 */
 #define FLASH_OBR_BFB2                      FLASH_OBR_BFB2_Msk                 /*!< BFB2 */
 #define FLASH_OBR_USER_Pos                  (2U)                               
@@ -11309,49 +11309,49 @@ typedef struct
 #define FLASH_WRPR_WRP                      FLASH_WRPR_WRP_Msk                 /*!< Write Protect */
 
 /*****************  Bit definition for FLASH_OPTKEYR2 register ****************/
-#define FLASH_OPTKEYR_OPTKEYR2_Pos          (0U)                               
+#define FLASH_OPTKEYR_OPTKEYR2_Pos          (0U)
 #define FLASH_OPTKEYR_OPTKEYR2_Msk          (0xFFFFFFFFUL << FLASH_OPTKEYR_OPTKEYR2_Pos) /*!< 0xFFFFFFFF */
 #define FLASH_OPTKEYR_OPTKEYR2              FLASH_OPTKEYR_OPTKEYR2_Msk         /*!< Option Byte Key */
 
 /******************  Bit definition for FLASH_SR2 register ********************/
-#define FLASH_SR2_BSY_Pos                   (0U)                               
+#define FLASH_SR2_BSY_Pos                   (0U)
 #define FLASH_SR2_BSY_Msk                   (0x1UL << FLASH_SR2_BSY_Pos)        /*!< 0x00000001 */
 #define FLASH_SR2_BSY                       FLASH_SR2_BSY_Msk                  /*!< Busy */
-#define FLASH_SR2_PGERR_Pos                 (2U)                               
+#define FLASH_SR2_PGERR_Pos                 (2U)
 #define FLASH_SR2_PGERR_Msk                 (0x1UL << FLASH_SR2_PGERR_Pos)      /*!< 0x00000004 */
 #define FLASH_SR2_PGERR                     FLASH_SR2_PGERR_Msk                /*!< Programming Error */
-#define FLASH_SR2_WRPRTERR_Pos              (4U)                               
+#define FLASH_SR2_WRPRTERR_Pos              (4U)
 #define FLASH_SR2_WRPRTERR_Msk              (0x1UL << FLASH_SR2_WRPRTERR_Pos)   /*!< 0x00000010 */
 #define FLASH_SR2_WRPRTERR                  FLASH_SR2_WRPRTERR_Msk             /*!< Write Protection Error */
-#define FLASH_SR2_EOP_Pos                   (5U)                               
+#define FLASH_SR2_EOP_Pos                   (5U)
 #define FLASH_SR2_EOP_Msk                   (0x1UL << FLASH_SR2_EOP_Pos)        /*!< 0x00000020 */
 #define FLASH_SR2_EOP                       FLASH_SR2_EOP_Msk                  /*!< End of operation */
 
 /*******************  Bit definition for FLASH_CR2 register *******************/
-#define FLASH_CR2_PG_Pos                    (0U)                               
+#define FLASH_CR2_PG_Pos                    (0U)
 #define FLASH_CR2_PG_Msk                    (0x1UL << FLASH_CR2_PG_Pos)         /*!< 0x00000001 */
 #define FLASH_CR2_PG                        FLASH_CR2_PG_Msk                   /*!< Programming */
-#define FLASH_CR2_PER_Pos                   (1U)                               
+#define FLASH_CR2_PER_Pos                   (1U)
 #define FLASH_CR2_PER_Msk                   (0x1UL << FLASH_CR2_PER_Pos)        /*!< 0x00000002 */
 #define FLASH_CR2_PER                       FLASH_CR2_PER_Msk                  /*!< Page Erase */
-#define FLASH_CR2_MER_Pos                   (2U)                               
+#define FLASH_CR2_MER_Pos                   (2U)
 #define FLASH_CR2_MER_Msk                   (0x1UL << FLASH_CR2_MER_Pos)        /*!< 0x00000004 */
 #define FLASH_CR2_MER                       FLASH_CR2_MER_Msk                  /*!< Mass Erase */
-#define FLASH_CR2_STRT_Pos                  (6U)                               
+#define FLASH_CR2_STRT_Pos                  (6U)
 #define FLASH_CR2_STRT_Msk                  (0x1UL << FLASH_CR2_STRT_Pos)       /*!< 0x00000040 */
 #define FLASH_CR2_STRT                      FLASH_CR2_STRT_Msk                 /*!< Start */
-#define FLASH_CR2_LOCK_Pos                  (7U)                               
+#define FLASH_CR2_LOCK_Pos                  (7U)
 #define FLASH_CR2_LOCK_Msk                  (0x1UL << FLASH_CR2_LOCK_Pos)       /*!< 0x00000080 */
 #define FLASH_CR2_LOCK                      FLASH_CR2_LOCK_Msk                 /*!< Lock */
-#define FLASH_CR2_ERRIE_Pos                 (10U)                              
+#define FLASH_CR2_ERRIE_Pos                 (10U)
 #define FLASH_CR2_ERRIE_Msk                 (0x1UL << FLASH_CR2_ERRIE_Pos)      /*!< 0x00000400 */
 #define FLASH_CR2_ERRIE                     FLASH_CR2_ERRIE_Msk                /*!< Error Interrupt Enable */
-#define FLASH_CR2_EOPIE_Pos                 (12U)                              
+#define FLASH_CR2_EOPIE_Pos                 (12U)
 #define FLASH_CR2_EOPIE_Msk                 (0x1UL << FLASH_CR2_EOPIE_Pos)      /*!< 0x00001000 */
 #define FLASH_CR2_EOPIE                     FLASH_CR2_EOPIE_Msk                /*!< End of operation interrupt enable */
 
 /*******************  Bit definition for FLASH_AR2 register *******************/
-#define FLASH_AR_FAR2_Pos                   (0U)                               
+#define FLASH_AR_FAR2_Pos                   (0U)
 #define FLASH_AR_FAR2_Msk                   (0xFFFFFFFFUL << FLASH_AR_FAR2_Pos) /*!< 0xFFFFFFFF */
 #define FLASH_AR_FAR2                       FLASH_AR_FAR2_Msk                  /*!< Flash Address */
 

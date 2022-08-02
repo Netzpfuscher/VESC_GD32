@@ -49,12 +49,18 @@ void prv_LED_blink(uint32_t speed){
 
 }
 
+void startup_thread(void * arg){
+	lispif_init();
+	vTaskDelete(NULL);
+	vTaskDelay(portMAX_DELAY);
+}
 
 
 
 void task_LED(void * argument)
 {
 	mc_interface_init();
+	xTaskCreate(startup_thread, "tskStart", 3096, NULL, PRIO_NORMAL, NULL);
 
 	/* Infinite loop */
 	for(;;)

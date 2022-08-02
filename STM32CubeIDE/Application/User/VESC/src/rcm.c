@@ -17,7 +17,7 @@ void rcm_thread(void * arg);
 void rcm_init(void){
 	LL_ADC_REG_SetSequencerLength( ADC3, LL_ADC_REG_SEQ_SCAN_DISABLE );
 	dll_init(&dll);
-	xTaskCreate(rcm_thread, "tskRCM", 256, &dll, PRIO_NORMAL, NULL);
+	xTaskCreate(rcm_thread, "tskRCM", 128, &dll, PRIO_NORMAL, NULL);
 }
 
 rcm_handle rcm_add_conversion(ADC_TypeDef * adc, uint8_t channel, uint32_t sampling_time, TickType_t sample_delay, volatile uint16_t * result_ptr){

@@ -82,6 +82,14 @@
 #define ENABLE_GATE()
 #define DISABLE_GATE()
 
+//UART
+#define HW_UART_RX_PORT			GPIOC			//Button on m365 not UART
+#define HW_UART_TX_PORT			GPIOB
+
+#define HW_UART_RX_PIN			GPIO_PIN_14		//Button on m365 not UART
+#define HW_UART_TX_PIN			GPIO_PIN_6
+
+
 // NTC Termistors
 #define ADC_TEMP_MOS			ADC3
 #define ADC_CH_TEMP_MOS			0
@@ -91,9 +99,17 @@
 #define MOTOR_TEMP_LPF 0.1
 
 //Hall
-#define READ_HALL1() HAL_GPIO_ReadPin(M1_HALL_H1_GPIO_Port, M1_HALL_H1_Pin)
-#define READ_HALL2() HAL_GPIO_ReadPin(M1_HALL_H2_GPIO_Port, M1_HALL_H2_Pin)
-#define READ_HALL3() HAL_GPIO_ReadPin(M1_HALL_H3_GPIO_Port, M1_HALL_H3_Pin)
+#define HW_HALL_ENC_GPIO1 		GPIOB
+#define HW_HALL_ENC_GPIO2 		GPIOB
+#define HW_HALL_ENC_GPIO3 		GPIOB
+
+#define HW_HALL_ENC_PIN1		GPIO_PIN_4
+#define HW_HALL_ENC_PIN2		GPIO_PIN_5
+#define HW_HALL_ENC_PIN3		GPIO_PIN_0
+
+#define READ_HALL1() HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO1, HW_HALL_ENC_PIN1)
+#define READ_HALL2() HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO2, HW_HALL_ENC_PIN2)
+#define READ_HALL3() HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO3, HW_HALL_ENC_PIN1)
 
 //Current
 

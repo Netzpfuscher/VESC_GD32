@@ -53,6 +53,7 @@ static lbm_tokenizer_char_stream_t string_tok;
 //static THD_WORKING_AREA(eval_thread_wa, 2048);
 void eval_thread(void * arg);
 static bool lisp_thd_running = false;
+static bool lisp_is_init = false;
 
 static int repl_cid = -1;
 
@@ -67,6 +68,8 @@ void lispif_init(void) {
 	if (!timeout_had_IWDG_reset() && terminal_get_first_fault() != FAULT_CODE_BOOTING_FROM_WATCHDOG_RESET) {
 		lispif_restart(false, true);
 	}
+	lbm_eval_init();
+	lisp_is_init=true;
 }
 
 int lispif_printf_wrapper(const char* format, ...) {
@@ -113,6 +116,7 @@ static void sym_it(const char *str) {
 }
 
 void lispif_process_cmd(unsigned char *data, unsigned int len, PACKET_STATE_t * phandle) {
+	if(!lisp_is_init) return;
 	COMM_PACKET_ID packet_id;
 
 	packet_id = data[0];
@@ -396,7 +400,7 @@ bool lispif_restart(bool print, bool load_code) {
 			lbm_set_usleep_callback(sleep_callback);
 			lbm_set_printf_callback(lispif_printf_wrapper);
 			lbm_set_ctx_done_callback(done_callback);
-			xTaskCreate(eval_thread, "tskEval", 2048, NULL, PRIO_NORMAL, NULL);
+			xTaskCreate(eval_thread, "tskEval", 1024, NULL, PRIO_NORMAL, NULL);
 			lisp_thd_running = true;
 		} else {
 			lbm_pause_eval();
@@ -416,6 +420,7 @@ bool lispif_restart(bool print, bool load_code) {
 		lbm_pause_eval();
 		while (lbm_get_eval_state() != EVAL_CPS_STATE_PAUSED) {
 			vTaskDelay(MS_TO_TICKS(100));
+			lbm_pause_eval();
 		}
 
 		lispif_load_vesc_extensions();

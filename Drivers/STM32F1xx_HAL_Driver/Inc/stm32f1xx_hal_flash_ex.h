@@ -240,7 +240,7 @@ typedef struct
   * @{
   */ 
 #if (defined(STM32F101x6) || defined(STM32F102x6) || defined(STM32F103x6) || defined(STM32F100xB) || defined(STM32F101xB) || defined(STM32F102xB) || defined(STM32F103xB))
-#define FLASH_PAGE_SIZE          0x400U
+#define FLASH_PAGE_SIZE          0x800U
 #endif /* STM32F101x6 || STM32F102x6 || STM32F103x6 */
        /* STM32F100xB || STM32F101xB || STM32F102xB || STM32F103xB */
 

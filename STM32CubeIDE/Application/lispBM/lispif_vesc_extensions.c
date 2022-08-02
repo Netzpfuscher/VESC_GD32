@@ -376,46 +376,46 @@ static bool is_number_all(lbm_value *args, lbm_uint argn) {
 #define CHECK_ARGN(n)				if (argn != n) {return lbm_enc_sym(SYM_EERROR);}
 #define CHECK_ARGN_NUMBER(n)		if (argn != n || !is_number_all(args, argn)) {return lbm_enc_sym(SYM_EERROR);}
 
-//static bool gpio_get_pin(lbm_uint sym, stm32_gpio_t **port, int *pin) {
-//	if (compare_symbol(sym, &syms_vesc.pin_rx)) {
-//#ifdef HW_UART_RX_PORT
-//		*port = HW_UART_RX_PORT; *pin = HW_UART_RX_PIN;
-//		return true;
-//#endif
-//	} else if (compare_symbol(sym, &syms_vesc.pin_tx)) {
-//#ifdef HW_UART_TX_PORT
-//		*port = HW_UART_TX_PORT; *pin = HW_UART_TX_PIN;
-//		return true;
-//#endif
-//	} else if (compare_symbol(sym, &syms_vesc.pin_swdio)) {
-//		*port = GPIOA; *pin = 13;
-//		return true;
-//	} else if (compare_symbol(sym, &syms_vesc.pin_swclk)) {
-//		*port = GPIOA; *pin = 14;
-//		return true;
-//	} else if (compare_symbol(sym, &syms_vesc.pin_hall1)) {
-//		*port = HW_HALL_ENC_GPIO1; *pin = HW_HALL_ENC_PIN1;
-//		return true;
-//	} else if (compare_symbol(sym, &syms_vesc.pin_hall2)) {
-//		*port = HW_HALL_ENC_GPIO2; *pin = HW_HALL_ENC_PIN2;
-//		return true;
-//	} else if (compare_symbol(sym, &syms_vesc.pin_hall3)) {
-//		*port = HW_HALL_ENC_GPIO3; *pin = HW_HALL_ENC_PIN3;
-//		return true;
-//	} else if (compare_symbol(sym, &syms_vesc.pin_adc1)) {
-//#ifdef HW_ADC_EXT_GPIO
-//		*port = HW_ADC_EXT_GPIO; *pin = HW_ADC_EXT_PIN;
-//		return true;
-//#endif
-//	} else if (compare_symbol(sym, &syms_vesc.pin_adc2)) {
-//#ifdef HW_ADC_EXT2_GPIO
-//		*port = HW_ADC_EXT2_GPIO; *pin = HW_ADC_EXT2_PIN;
-//		return true;
-//#endif
-//	}
-//
-//	return false;
-//}
+static bool gpio_get_pin(lbm_uint sym, GPIO_TypeDef **port, int *pin) {
+	if (compare_symbol(sym, &syms_vesc.pin_rx)) {
+#ifdef HW_UART_RX_PORT
+		*port = HW_UART_RX_PORT; *pin = HW_UART_RX_PIN;
+		return true;
+#endif
+	} else if (compare_symbol(sym, &syms_vesc.pin_tx)) {
+#ifdef HW_UART_TX_PORT
+		*port = HW_UART_TX_PORT; *pin = HW_UART_TX_PIN;
+		return true;
+#endif
+	} else if (compare_symbol(sym, &syms_vesc.pin_swdio)) {
+		*port = GPIOA; *pin = 13;
+		return true;
+	} else if (compare_symbol(sym, &syms_vesc.pin_swclk)) {
+		*port = GPIOA; *pin = 14;
+		return true;
+	} else if (compare_symbol(sym, &syms_vesc.pin_hall1)) {
+		*port = HW_HALL_ENC_GPIO1; *pin = HW_HALL_ENC_PIN1;
+		return true;
+	} else if (compare_symbol(sym, &syms_vesc.pin_hall2)) {
+		*port = HW_HALL_ENC_GPIO2; *pin = HW_HALL_ENC_PIN2;
+		return true;
+	} else if (compare_symbol(sym, &syms_vesc.pin_hall3)) {
+		*port = HW_HALL_ENC_GPIO3; *pin = HW_HALL_ENC_PIN3;
+		return true;
+	} else if (compare_symbol(sym, &syms_vesc.pin_adc1)) {
+#ifdef HW_ADC_EXT_GPIO
+		*port = HW_ADC_EXT_GPIO; *pin = HW_ADC_EXT_PIN;
+		return true;
+#endif
+	} else if (compare_symbol(sym, &syms_vesc.pin_adc2)) {
+#ifdef HW_ADC_EXT2_GPIO
+		*port = HW_ADC_EXT2_GPIO; *pin = HW_ADC_EXT2_PIN;
+		return true;
+#endif
+	}
+
+	return false;
+}
 
 // Various commands
 
@@ -2136,77 +2136,85 @@ static lbm_value ext_raw_hall(lbm_value *args, lbm_uint argn) {
 //	return lbm_enc_i(1);
 //}
 //
-//static lbm_value ext_gpio_configure(lbm_value *args, lbm_uint argn) {
-//	CHECK_ARGN(2);
-//
-//	if (!lbm_is_symbol(args[0]) || !lbm_is_symbol(args[1])) {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	lbm_uint name = lbm_dec_sym(args[1]);
-//	iomode_t mode = PAL_MODE_OUTPUT_PUSHPULL;
-//
-//	if (compare_symbol(name, &syms_vesc.pin_mode_out)) {
-//		mode = PAL_MODE_OUTPUT_PUSHPULL;
-//	} else if (compare_symbol(name, &syms_vesc.pin_mode_od)) {
-//		mode = PAL_MODE_OUTPUT_OPENDRAIN;
-//	} else if (compare_symbol(name, &syms_vesc.pin_mode_od_pu)) {
-//		mode = PAL_MODE_OUTPUT_OPENDRAIN | PAL_STM32_PUDR_PULLUP;
-//	} else if (compare_symbol(name, &syms_vesc.pin_mode_od_pd)) {
-//		mode = PAL_MODE_OUTPUT_OPENDRAIN | PAL_STM32_PUDR_PULLDOWN;
-//	} else if (compare_symbol(name, &syms_vesc.pin_mode_in)) {
-//		mode = PAL_MODE_INPUT;
-//	} else if (compare_symbol(name, &syms_vesc.pin_mode_in_pu)) {
-//		mode = PAL_MODE_INPUT_PULLUP;
-//	} else if (compare_symbol(name, &syms_vesc.pin_mode_in_pd)) {
-//		mode = PAL_MODE_INPUT_PULLDOWN;
-//	} else if (compare_symbol(name, &syms_vesc.pin_mode_analog)) {
-//		mode = PAL_STM32_MODE_ANALOG;
-//	} else {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	stm32_gpio_t *port; int pin;
-//	if (gpio_get_pin(lbm_dec_sym(args[0]), &port, &pin)) {
-//		palSetPadMode(port, pin, mode);
-//	} else {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	return lbm_enc_sym(SYM_TRUE);
-//}
+static lbm_value ext_gpio_configure(lbm_value *args, lbm_uint argn) {
+	CHECK_ARGN(2);
 
-//static lbm_value ext_gpio_write(lbm_value *args, lbm_uint argn) {
-//	CHECK_ARGN(2);
-//
-//	if (!lbm_is_symbol(args[0]) || !lbm_is_number(args[1])) {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	stm32_gpio_t *port; int pin;
-//	if (gpio_get_pin(lbm_dec_sym(args[0]), &port, &pin)) {
-//		palWritePad(port, pin, lbm_dec_as_i32(args[1]));
-//	} else {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	return lbm_enc_sym(SYM_TRUE);
-//}
+	if (!lbm_is_symbol(args[0]) || !lbm_is_symbol(args[1])) {
+		return lbm_enc_sym(SYM_EERROR);
+	}
 
-//static lbm_value ext_gpio_read(lbm_value *args, lbm_uint argn) {
-//	CHECK_ARGN(1);
-//
-//	if (!lbm_is_symbol(args[0])) {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	stm32_gpio_t *port; int pin;
-//	if (gpio_get_pin(lbm_dec_sym(args[0]), &port, &pin)) {
-//		return lbm_enc_i(palReadPad(port, pin));
-//	} else {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//}
+	lbm_uint name = lbm_dec_sym(args[1]);
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+
+	if (compare_symbol(name, &syms_vesc.pin_mode_out)) {
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	} else if (compare_symbol(name, &syms_vesc.pin_mode_od)) {
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+	} else if (compare_symbol(name, &syms_vesc.pin_mode_od_pu)) {
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+		GPIO_InitStruct.Pull = GPIO_PULLUP;
+	} else if (compare_symbol(name, &syms_vesc.pin_mode_od_pd)) {
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+		GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+	} else if (compare_symbol(name, &syms_vesc.pin_mode_in)) {
+		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	} else if (compare_symbol(name, &syms_vesc.pin_mode_in_pu)) {
+		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		GPIO_InitStruct.Pull = GPIO_PULLUP;
+	} else if (compare_symbol(name, &syms_vesc.pin_mode_in_pd)) {
+		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+	} else if (compare_symbol(name, &syms_vesc.pin_mode_analog)) {
+		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+	} else {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	GPIO_TypeDef *port; int pin;
+	if (gpio_get_pin(lbm_dec_sym(args[0]), &port, &pin)) {
+		GPIO_InitStruct.Pin = pin;
+		HAL_GPIO_Init(port, &GPIO_InitStruct);
+	} else {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	return lbm_enc_sym(SYM_TRUE);
+}
+
+static lbm_value ext_gpio_write(lbm_value *args, lbm_uint argn) {
+	CHECK_ARGN(2);
+
+	if (!lbm_is_symbol(args[0]) || !lbm_is_number(args[1])) {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	GPIO_TypeDef *port; int pin;
+	if (gpio_get_pin(lbm_dec_sym(args[0]), &port, &pin)) {
+		HAL_GPIO_WritePin(port, pin, lbm_dec_as_i32(args[1]));
+	} else {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	return lbm_enc_sym(SYM_TRUE);
+}
+
+static lbm_value ext_gpio_read(lbm_value *args, lbm_uint argn) {
+	CHECK_ARGN(1);
+
+	if (!lbm_is_symbol(args[0])) {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	GPIO_TypeDef *port; int pin;
+	if (gpio_get_pin(lbm_dec_sym(args[0]), &port, &pin)) {
+		return lbm_enc_i(HAL_GPIO_ReadPin(port, pin));
+	} else {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+}
 
 static lbm_value ext_str_from_n(lbm_value *args, lbm_uint argn) {
 	if ((argn != 1 && argn != 2) || !lbm_is_number(args[0])) {
@@ -3441,9 +3449,9 @@ void lispif_load_vesc_extensions(void) {
 //	lbm_add_extension("i2c-restore", ext_i2c_restore);
 //
 //	// GPIO
-//	lbm_add_extension("gpio-configure", ext_gpio_configure);
-//	lbm_add_extension("gpio-write", ext_gpio_write);
-//	lbm_add_extension("gpio-read", ext_gpio_read);
+	lbm_add_extension("gpio-configure", ext_gpio_configure);
+	lbm_add_extension("gpio-write", ext_gpio_write);
+	lbm_add_extension("gpio-read", ext_gpio_read);
 
 	// String manipulation
 	lbm_add_extension("str-from-n", ext_str_from_n);
