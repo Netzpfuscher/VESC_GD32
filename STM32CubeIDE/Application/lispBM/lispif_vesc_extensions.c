@@ -1811,169 +1811,188 @@ static lbm_value ext_raw_hall(lbm_value *args, lbm_uint argn) {
 //		2500000, 0, 0, 0
 //};
 //
-//static bool uart_started = false;
-//
-//static lbm_value ext_uart_start(lbm_value *args, lbm_uint argn) {
-//	if ((argn != 1 && argn != 2) || !lbm_is_number(args[0])) {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	int baud = lbm_dec_as_i32(args[0]);
-//
-//	if (baud < 10 || baud > 10000000) {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	bool half_duplex = false;
-//	if (argn == 2) {
-//		if (lbm_is_symbol(args[1])) {
-//			if (compare_symbol(lbm_dec_sym(args[1]), &syms_vesc.half_duplex)) {
-//				half_duplex = true;
-//			} else {
-//				return lbm_enc_sym(SYM_EERROR);
-//			}
-//		} else {
-//			return lbm_enc_sym(SYM_TERROR);
-//		}
-//	}
-//
-//	app_configuration *appconf = mempools_alloc_appconf();
-//	conf_general_read_app_configuration(appconf);
-//	if (appconf->app_to_use == APP_UART ||
-//			appconf->app_to_use == APP_PPM_UART ||
-//			appconf->app_to_use == APP_ADC_UART) {
-//		appconf->app_to_use = APP_NONE;
-//		conf_general_store_app_configuration(appconf);
-//		app_set_configuration(appconf);
-//	}
-//	mempools_free_appconf(appconf);
-//
-//	uart_cfg.speed = baud;
-//	uart_cfg.cr3 = half_duplex ? USART_CR3_HDSEL : 0;
-//
-//	sdStop(&HW_UART_DEV);
-//	sdStart(&HW_UART_DEV, &uart_cfg);
-//
-//	palSetPadMode(HW_UART_TX_PORT, HW_UART_TX_PIN, PAL_MODE_ALTERNATE(HW_UART_GPIO_AF));
-//	if (!half_duplex) {
-//		palSetPadMode(HW_UART_RX_PORT, HW_UART_RX_PIN, PAL_MODE_ALTERNATE(HW_UART_GPIO_AF));
-//	}
-//
-//	uart_started = true;
-//
-//	return lbm_enc_sym(SYM_TRUE);
-//}
-//
-//static void wait_uart_tx_task(void *arg) {
-//	(void)arg;
-//	while(!chOQIsEmptyI(&HW_UART_DEV.oqueue)){
-//		chThdSleepMilliseconds(1);
-//	}
-//	chThdSleepMilliseconds(1);
-//	HW_UART_DEV.usart->CR1 |= USART_CR1_RE;
-//}
-//
-//static lbm_value ext_uart_write(lbm_value *args, lbm_uint argn) {
-//	if (argn != 1 || (lbm_type_of(args[0]) != LBM_TYPE_CONS && lbm_type_of(args[0]) != LBM_TYPE_ARRAY)) {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	if (!uart_started) {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	const int max_len = 20;
-//	uint8_t to_send[max_len];
-//	uint8_t *to_send_ptr = to_send;
-//	int ind = 0;
-//
-//	if (lbm_type_of(args[0]) == LBM_TYPE_ARRAY) {
-//		lbm_array_header_t *array = (lbm_array_header_t *)lbm_car(args[0]);
-//		if (array->elt_type != LBM_TYPE_BYTE) {
-//			return lbm_enc_sym(SYM_EERROR);
-//		}
-//
-//		to_send_ptr = (uint8_t*)array->data;
-//		ind = array->size;
-//	} else {
-//		lbm_value curr = args[0];
-//		while (lbm_type_of(curr) == LBM_TYPE_CONS) {
-//			lbm_value  arg = lbm_car(curr);
-//
-//			if (lbm_is_number(arg)) {
-//				to_send[ind++] = lbm_dec_as_u32(arg);
-//			} else {
-//				return lbm_enc_sym(SYM_EERROR);
-//			}
-//
-//			if (ind == max_len) {
-//				break;
-//			}
-//
-//			curr = lbm_cdr(curr);
-//		}
-//	}
-//
-//	if (uart_cfg.cr3 & USART_CR3_HDSEL) {
-//		HW_UART_DEV.usart->CR1 &= ~USART_CR1_RE;
-//		sdWrite(&HW_UART_DEV, to_send_ptr, ind);
-//		worker_execute(wait_uart_tx_task, 0);
-//	} else{
-//		sdWrite(&HW_UART_DEV, to_send_ptr, ind);
-//	}
-//
-//	return lbm_enc_sym(SYM_TRUE);
-//}
-//
-//static lbm_value ext_uart_read(lbm_value *args, lbm_uint argn) {
-//	if ((argn != 2 && argn != 3 && argn != 4) ||
-//			lbm_type_of(args[0]) != LBM_TYPE_ARRAY || !lbm_is_number(args[1])) {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	unsigned int num = lbm_dec_as_u32(args[1]);
-//	if (num > 512) {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	if (num == 0 || !uart_started) {
-//		return lbm_enc_i(0);
-//	}
-//
-//	unsigned int offset = 0;
-//	if (argn >= 3) {
-//		if (!lbm_is_number(args[2])) {
-//			return lbm_enc_sym(SYM_EERROR);
-//		}
-//		offset = lbm_dec_as_u32(args[2]);
-//	}
-//
-//	int stop_at = -1;
-//	if (argn >= 4) {
-//		if (!lbm_is_number(args[3])) {
-//			return lbm_enc_sym(SYM_EERROR);
-//		}
-//		stop_at = lbm_dec_as_u32(args[3]);
-//	}
-//
-//	lbm_array_header_t *array = (lbm_array_header_t *)lbm_car(args[0]);
-//	if (array->elt_type != LBM_TYPE_BYTE || array->size < (num + offset)) {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//
-//	unsigned int count = 0;
-//	msg_t res = sdGetTimeout(&HW_UART_DEV, TIME_IMMEDIATE);
-//	while (res != MSG_TIMEOUT) {
-//		((uint8_t*)array->data)[offset + count] = (uint8_t)res;
-//		count++;
-//		if (res == stop_at || count >= num) {
-//			break;
-//		}
-//		res = sdGetTimeout(&HW_UART_DEV, TIME_IMMEDIATE);
-//	}
-//
-//	return lbm_enc_i(count);
-//}
+static bool uart_started = false;
+uint8_t * usart_rx_dma_buffer=NULL;
+static uint32_t rd_ptr=0;
+static bool h_duplex=false;
+
+static lbm_value ext_uart_start(lbm_value *args, lbm_uint argn) {
+	if ((argn != 1 && argn != 2) || !lbm_is_number(args[0])) {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	int baud = lbm_dec_as_i32(args[0]);
+
+	if (baud < 10 || baud > 10000000) {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	bool half_duplex = false;
+	if (argn == 2) {
+		if (lbm_is_symbol(args[1])) {
+			if (compare_symbol(lbm_dec_sym(args[1]), &syms_vesc.half_duplex)) {
+				half_duplex = true;
+			} else {
+				return lbm_enc_sym(SYM_EERROR);
+			}
+		} else {
+			return lbm_enc_sym(SYM_TERROR);
+		}
+	}
+
+	app_configuration *appconf = mempools_alloc_appconf();
+	conf_general_read_app_configuration(appconf);
+	if (appconf->app_to_use == APP_UART ||
+			appconf->app_to_use == APP_PPM_UART ||
+			appconf->app_to_use == APP_ADC_UART) {
+		appconf->app_to_use = APP_NONE;
+		conf_general_store_app_configuration(appconf);
+		app_set_configuration(appconf);
+	}
+	mempools_free_appconf(appconf);
+
+	if(aux_uart.tx_semaphore==NULL){
+		aux_uart.tx_semaphore = xSemaphoreCreateBinary();
+		xSemaphoreGive(aux_uart.tx_semaphore);
+	}
+
+
+	APP_USART_DMA.Init.BaudRate = baud;
+	HAL_UART_MspInit(&APP_USART_DMA);
+	HAL_UART_Init(&APP_USART_DMA);
+	h_duplex=half_duplex;
+	if(half_duplex){
+		HAL_HalfDuplex_Init(&APP_USART_DMA);
+	}
+
+	usart_rx_dma_buffer = pvPortMalloc(aux_uart.rx_buffer_size);
+	if(usart_rx_dma_buffer==NULL){
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	HAL_UART_Receive_DMA(&APP_USART_DMA, usart_rx_dma_buffer, aux_uart.rx_buffer_size);
+
+	uart_started = true;
+
+	return lbm_enc_sym(SYM_TRUE);
+}
+
+static void putbuffer(unsigned char *buf, unsigned int len, port_str * port){
+	xSemaphoreTake(port->tx_semaphore, portMAX_DELAY);
+	if(port->half_duplex){
+		port->uart->Instance->CR1 &= ~USART_CR1_RE;
+		vTaskDelay(1);
+	}
+	HAL_UART_Transmit_DMA(port->uart, buf, len);
+	while(port->uart->hdmatx->State != HAL_DMA_STATE_READY){
+		port->uart->gState = HAL_UART_STATE_READY;
+		vTaskDelay(1);
+	}
+	if(port->half_duplex) port->uart->Instance->CR1 |= USART_CR1_RE;
+	xSemaphoreGive(port->tx_semaphore);
+}
+
+static lbm_value ext_uart_write(lbm_value *args, lbm_uint argn) {
+	if (argn != 1 || (lbm_type_of(args[0]) != LBM_TYPE_CONS && lbm_type_of(args[0]) != LBM_TYPE_ARRAY)) {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	if (!uart_started) {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	const int max_len = 20;
+	uint8_t to_send[max_len];
+	uint8_t *to_send_ptr = to_send;
+	int ind = 0;
+
+	if (lbm_type_of(args[0]) == LBM_TYPE_ARRAY) {
+		lbm_array_header_t *array = (lbm_array_header_t *)lbm_car(args[0]);
+		if (array->elt_type != LBM_TYPE_BYTE) {
+			return lbm_enc_sym(SYM_EERROR);
+		}
+
+		to_send_ptr = (uint8_t*)array->data;
+		ind = array->size;
+	} else {
+		lbm_value curr = args[0];
+		while (lbm_type_of(curr) == LBM_TYPE_CONS) {
+			lbm_value  arg = lbm_car(curr);
+
+			if (lbm_is_number(arg)) {
+				to_send[ind++] = lbm_dec_as_u32(arg);
+			} else {
+				return lbm_enc_sym(SYM_EERROR);
+			}
+
+			if (ind == max_len) {
+				break;
+			}
+
+			curr = lbm_cdr(curr);
+		}
+	}
+
+	putbuffer(to_send_ptr, ind, &aux_uart);
+
+	return lbm_enc_sym(SYM_TRUE);
+}
+
+static uint32_t uart_get_write_pos(port_str * port){
+	return ( ((uint32_t)port->rx_buffer_size - port->uart->hdmarx->Instance->CNDTR) & ((uint32_t)port->rx_buffer_size -1));
+}
+
+static lbm_value ext_uart_read(lbm_value *args, lbm_uint argn) {
+	if ((argn != 2 && argn != 3 && argn != 4) ||
+			lbm_type_of(args[0]) != LBM_TYPE_ARRAY || !lbm_is_number(args[1])) {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	unsigned int num = lbm_dec_as_u32(args[1]);
+	if (num > 512) {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	if (num == 0 || !uart_started) {
+		return lbm_enc_i(0);
+	}
+
+	unsigned int offset = 0;
+	if (argn >= 3) {
+		if (!lbm_is_number(args[2])) {
+			return lbm_enc_sym(SYM_EERROR);
+		}
+		offset = lbm_dec_as_u32(args[2]);
+	}
+
+	int stop_at = -1;
+	if (argn >= 4) {
+		if (!lbm_is_number(args[3])) {
+			return lbm_enc_sym(SYM_EERROR);
+		}
+		stop_at = lbm_dec_as_u32(args[3]);
+	}
+
+	lbm_array_header_t *array = (lbm_array_header_t *)lbm_car(args[0]);
+	if (array->elt_type != LBM_TYPE_BYTE || array->size < (num + offset)) {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+
+	unsigned int count = 0;
+	int res;
+	while(rd_ptr != uart_get_write_pos(&aux_uart)) {
+		res = usart_rx_dma_buffer[rd_ptr];
+		rd_ptr++;
+		rd_ptr &= ((uint32_t)aux_uart.rx_buffer_size - 1);
+		((uint8_t*)array->data)[offset + count] = (uint8_t)res;
+		count++;
+		if (res == stop_at || count >= num) {
+			break;
+		}
+	}
+
+	return lbm_enc_i(count);
+}
 //
 //static i2c_bb_state i2c_cfg = {
 //		HW_UART_RX_PORT, HW_UART_RX_PIN,
@@ -3437,10 +3456,10 @@ void lispif_load_vesc_extensions(void) {
 	lbm_add_extension("raw-hall", ext_raw_hall);
 
 	// UART
-//	uart_started = false;
-//	lbm_add_extension("uart-start", ext_uart_start);
-//	lbm_add_extension("uart-write", ext_uart_write);
-//	lbm_add_extension("uart-read", ext_uart_read);
+	uart_started = false;
+	lbm_add_extension("uart-start", ext_uart_start);
+	lbm_add_extension("uart-write", ext_uart_write);
+	lbm_add_extension("uart-read", ext_uart_read);
 //
 //	// I2C
 //	i2c_started = false;
