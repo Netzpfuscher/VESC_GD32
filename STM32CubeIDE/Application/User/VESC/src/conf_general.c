@@ -42,7 +42,14 @@ app_configuration appconf;
 //#define LISP_SIZE	2048
 //uint8_t lisp_memory[LISP_SIZE];
 
-#define LISP_MEMORY 0x08096000
+#define FLASH_PAGE_256_SIZE 0x1000
+
+#define LISP_MEMORY 	0x080F8000
+#define LISP_PAGES		4
+#define LISP_MEMORY_END	(LISP_MEMORY+(4*FLASH_PAGE_256_SIZE))
+#define QML_MEMORY 		0x080FC000
+#define QML_PAGES		4
+#define QML_MEMORY_END	(QML_MEMORY+(4*FLASH_PAGE_256_SIZE))
 //#define QML_MEMORY
 
 int conf_general_autodetect_apply_sensors_foc(float current,
@@ -1016,15 +1023,15 @@ HAL_StatusTypeDef HAL_FLASHEx_EraseGD(FLASH_EraseInitTypeDef *pEraseInit, uint32
   return status;
 }
 
-bool conf_general_erase_flash_code(void){
+bool conf_general_erase_flash_code(uint32_t addr, uint32_t pages){
 
 	HAL_FLASH_Unlock();
 
 	uint32_t page_error = 0;
 	FLASH_EraseInitTypeDef s_eraseinit;
 	s_eraseinit.TypeErase   = FLASH_TYPEERASE_PAGES;
-	s_eraseinit.PageAddress = LISP_MEMORY;
-	s_eraseinit.NbPages     = 4;
+	s_eraseinit.PageAddress = addr;
+	s_eraseinit.NbPages     = pages;
 	HAL_FLASHEx_EraseGD(&s_eraseinit, &page_error);
 
 	HAL_FLASH_Lock();
@@ -1071,23 +1078,37 @@ uint16_t conf_general_erase_code(int ind) {
 #ifdef USE_LISPBM
 	if (ind == CODE_IND_LISP) {
 		//lispif_stop_lib();
+		conf_general_erase_flash_code(LISP_MEMORY, LISP_PAGES);
 	}
 #endif
-	conf_general_erase_flash_code();
-	//memset(lisp_memory,0,LISP_SIZE);
+	if (ind == CODE_IND_QML){
+		conf_general_erase_flash_code(QML_MEMORY, QML_PAGES);
+	}
 	return FLASH_COMPLETE;
 }
 
 uint8_t* conf_general_code_data(int ind) {
-	return (uint8_t*)LISP_MEMORY+8;
-	//return lisp_memory + 8;
+#ifdef USE_LISPBM
+	if (ind == CODE_IND_LISP) {
+		return (uint8_t*)LISP_MEMORY+8;
+	}
+#endif
+	if (ind == CODE_IND_QML) {
+		return (uint8_t*)QML_MEMORY+8;
+	}
+	return NULL;
 }
 
 uint32_t conf_general_code_size(int ind) {
-
-	//uint8_t *base = lisp_memory;
-	uint8_t *base = (uint8_t*)LISP_MEMORY;
+	uint8_t *base = NULL;
 	int32_t index = 0;
+#ifdef USE_LISPBM
+	if (ind == CODE_IND_LISP) {
+		base = (uint8_t*)LISP_MEMORY;
+	}
+#endif
+	if (ind == CODE_IND_QML) {
+		base = (uint8_t*)QML_MEMORY;
+	}
 	return buffer_get_uint32(base, &index);
-
 }

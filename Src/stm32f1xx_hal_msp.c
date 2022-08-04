@@ -122,14 +122,26 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     PA7     ------> ADC1_IN7
     PB1     ------> ADC1_IN9
     */
-    GPIO_InitStruct.Pin = M1_TEMPERATURE_Pin|M1_BUS_VOLTAGE_Pin|M1_CURR_AMPL_U_Pin|M1_CURR_AMPL_V_Pin
-                          |M1_CURR_AMPL_W_Pin|PHASE_A_V_Pin|PHASE_B_V_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    GPIO_InitStruct.Pin = PHASE_C_V_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    HAL_GPIO_Init(PHASE_C_V_GPIO_Port, &GPIO_InitStruct);
+#if ADC1_INJ_1_ENABLED
+        GPIO_InitStruct.Pin = ADC1_INJ_1_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC1_INJ_1_PORT, &GPIO_InitStruct);
+#endif
+#if ADC1_INJ_2_ENABLED
+        GPIO_InitStruct.Pin = ADC1_INJ_2_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC1_INJ_2_PORT, &GPIO_InitStruct);
+#endif
+#if ADC1_INJ_3_ENABLED
+        GPIO_InitStruct.Pin = ADC1_INJ_3_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC1_INJ_3_PORT, &GPIO_InitStruct);
+#endif
+#if ADC1_INJ_4_ENABLED
+        GPIO_InitStruct.Pin = ADC1_INJ_4_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC1_INJ_4_PORT, &GPIO_InitStruct);
+#endif
 
 
   /* USER CODE BEGIN ADC1_MspInit 1 */
@@ -150,9 +162,26 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     PA4     ------> ADC2_IN4
     PA5     ------> ADC2_IN5
     */
-    GPIO_InitStruct.Pin = M1_CURR_AMPL_U_Pin|M1_CURR_AMPL_V_Pin|M1_CURR_AMPL_W_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+#if ADC2_INJ_1_ENABLED
+        GPIO_InitStruct.Pin = ADC2_INJ_1_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC2_INJ_1_PORT, &GPIO_InitStruct);
+#endif
+#if ADC2_INJ_2_ENABLED
+        GPIO_InitStruct.Pin = ADC2_INJ_2_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC2_INJ_2_PORT, &GPIO_InitStruct);
+#endif
+#if ADC2_INJ_3_ENABLED
+        GPIO_InitStruct.Pin = ADC2_INJ_3_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC2_INJ_3_PORT, &GPIO_InitStruct);
+#endif
+#if ADC2_INJ_4_ENABLED
+        GPIO_InitStruct.Pin = ADC2_INJ_4_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC2_INJ_4_PORT, &GPIO_InitStruct);
+#endif
   	}
   else if(hadc->Instance==ADC3)
       {
@@ -184,6 +213,28 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
         }
 
         __HAL_LINKDMA(hadc,DMA_Handle,hdma_adc3);
+
+#if ADC3_INJ_1_ENABLED
+        GPIO_InitStruct.Pin = ADC3_INJ_1_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC3_INJ_1_PORT, &GPIO_InitStruct);
+#endif
+#if ADC3_INJ_2_ENABLED
+        GPIO_InitStruct.Pin = ADC3_INJ_2_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC3_INJ_2_PORT, &GPIO_InitStruct);
+#endif
+#if ADC3_INJ_3_ENABLED
+        GPIO_InitStruct.Pin = ADC3_INJ_3_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC3_INJ_3_PORT, &GPIO_InitStruct);
+#endif
+#if ADC3_INJ_4_ENABLED
+        GPIO_InitStruct.Pin = ADC3_INJ_4_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC3_INJ_4_PORT, &GPIO_InitStruct);
+#endif
+
 
   /* USER CODE BEGIN ADC2_MspInit 1 */
 
