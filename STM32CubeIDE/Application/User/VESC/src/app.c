@@ -38,9 +38,12 @@ void app_set_configuration(app_configuration *conf) {
 
 
 	utils_truncate_number_int((int*)&appconf.app_adc_conf.update_rate_hz, 1, 200);
+
+	app_adc_configure(&appconf.app_adc_conf);
+
 #ifndef DEBUG_ISR
 	if( xTaskGetSchedulerState() == taskSCHEDULER_RUNNING){
-		task_app_kill(&aux_uart);
+		app_adc_stop();
 		task_cli_kill(&aux_uart);
 	}
 
@@ -49,7 +52,7 @@ void app_set_configuration(app_configuration *conf) {
 			task_cli_init(&aux_uart);
 			break;
 		case APP_ADC:
-			task_app_init(&aux_uart);
+			app_adc_start(false);
 			break;
 		case APP_ADC_UART:
 			task_cli_init(&aux_uart);

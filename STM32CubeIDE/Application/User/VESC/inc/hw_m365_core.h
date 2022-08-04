@@ -71,7 +71,6 @@
 #define APP_USART_TX_DMA		hdma_usart1_tx
 #define APP_USART_RX_DMA		hdma_usart1_rx
 
-
 //Global
 #define HW_HAS_3_SHUNTS
 
@@ -88,6 +87,16 @@
 
 #define HW_UART_RX_PIN			GPIO_PIN_14		//Button on m365 not UART
 #define HW_UART_TX_PIN			GPIO_PIN_6
+
+
+//GPIO
+#define HW_ICU_GPIO				GPIOC
+#define HW_ICU_PIN				GPIO_PIN_14
+
+//Conversion
+#define V_REG 3.3
+// Voltage on ADC channel
+#define ADC_VOLTS(ch)			((float)ch / 4096.0 * V_REG)
 
 
 // NTC Termistors
@@ -111,6 +120,11 @@
 #define READ_HALL2() HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO2, HW_HALL_ENC_PIN2)
 #define READ_HALL3() HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO3, HW_HALL_ENC_PIN3)
 
+//Ext ADC
+#define ADC_IND_EXT				0
+#define ADC_IND_EXT2			0
+#define ADC_IND_EXT3			0
+
 //Current
 
 #define FAC_CURRENT 			(-1.0/((2048.0*RSHUNT*AMPLIFICATION_GAIN)/(3.3/2)))
@@ -120,7 +134,7 @@
 #define GET_CURRENT3() 			(ADC2->JDR1)
 
 //Voltage
-#define V_REG 3.3
+
 #define GET_VOLT1() 			((float)ADC1->JDR2 / 4096.0 * V_REG)
 #define GET_VOLT2() 			((float)ADC2->JDR2 / 4096.0 * V_REG)
 #define GET_VOLT3() 			((float)ADC1->JDR3 / 4096.0 * V_REG)

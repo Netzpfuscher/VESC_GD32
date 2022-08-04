@@ -48,7 +48,6 @@ port_str aux_uart = {	.uart = &APP_USART_DMA,
 
 
 void task_init(){
-	app_adc_init_timer();
 	task_cli_init(&main_uart);
 	task_LED_init(&main_uart);  //Bring up the blinky
 

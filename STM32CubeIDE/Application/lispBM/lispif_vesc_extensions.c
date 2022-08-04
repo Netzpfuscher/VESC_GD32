@@ -584,26 +584,26 @@ static lbm_value ext_get_selected_motor(lbm_value *args, lbm_uint argn) {
 //	return res;
 //}
 
-//static lbm_value ext_get_adc(lbm_value *args, lbm_uint argn) {
-//	CHECK_NUMBER_ALL();
-//
-//	if (argn == 0) {
-//		return lbm_enc_float(ADC_VOLTS(ADC_IND_EXT));
-//	} else if (argn == 1) {
-//		lbm_int channel = lbm_dec_as_i32(args[0]);
-//		if (channel == 0) {
-//			return lbm_enc_float(ADC_VOLTS(ADC_IND_EXT));
-//		} else if (channel == 1) {
-//			return lbm_enc_float(ADC_VOLTS(ADC_IND_EXT2));
-//		} else if (channel == 2) {
-//			return lbm_enc_float(ADC_VOLTS(ADC_IND_EXT3));
-//		} else {
-//			return lbm_enc_sym(SYM_EERROR);
-//		}
-//	} else {
-//		return lbm_enc_sym(SYM_EERROR);
-//	}
-//}
+static lbm_value ext_get_adc(lbm_value *args, lbm_uint argn) {
+	CHECK_NUMBER_ALL();
+
+	if (argn == 0) {
+		return lbm_enc_float(ADC_VOLTS(ADC_IND_EXT));
+	} else if (argn == 1) {
+		lbm_int channel = lbm_dec_as_i32(args[0]);
+		if (channel == 0) {
+			return lbm_enc_float(ADC_VOLTS(ADC_IND_EXT));
+		} else if (channel == 1) {
+			return lbm_enc_float(ADC_VOLTS(ADC_IND_EXT2));
+		} else if (channel == 2) {
+			return lbm_enc_float(ADC_VOLTS(ADC_IND_EXT3));
+		} else {
+			return lbm_enc_sym(SYM_EERROR);
+		}
+	} else {
+		return lbm_enc_sym(SYM_EERROR);
+	}
+}
 
 static lbm_value ext_get_adc_decoded(lbm_value *args, lbm_uint argn) {
 	CHECK_NUMBER_ALL();
@@ -930,63 +930,63 @@ static lbm_value ext_sysinfo(lbm_value *args, lbm_uint argn) {
 	return res;
 }
 
-//// App set commands
-//static lbm_value ext_app_adc_detach(lbm_value *args, lbm_uint argn) {
-//	if (argn == 1){
-//		if(lbm_dec_as_u32(args[0]) != 0){
-//			return lbm_enc_sym(SYM_EERROR);
-//		}
-//	}else{
-//		CHECK_ARGN_NUMBER(2);
-//	}
-//	uint32_t mode = lbm_dec_as_u32(args[0]);
-//	bool detach = lbm_dec_as_char(args[1]) > 0 ? true : false;
-//	switch (mode){
-//		case 0:
-//			app_adc_detach_adc(false);
-//			app_adc_detach_buttons(false);
-//			break;
-//		case 1:
-//			app_adc_detach_adc(detach);
-//			break;
-//		case 2:
-//			app_adc_detach_buttons(detach);
-//			break;
-//		case 3:
-//			app_adc_detach_adc(detach);
-//			app_adc_detach_buttons(detach);
-//			break;
-//		default:
-//			return lbm_enc_sym(SYM_EERROR);
-//	}
-//	return lbm_enc_sym(SYM_TRUE);
-//}
+// App set commands
+static lbm_value ext_app_adc_detach(lbm_value *args, lbm_uint argn) {
+	if (argn == 1){
+		if(lbm_dec_as_u32(args[0]) != 0){
+			return lbm_enc_sym(SYM_EERROR);
+		}
+	}else{
+		CHECK_ARGN_NUMBER(2);
+	}
+	uint32_t mode = lbm_dec_as_u32(args[0]);
+	bool detach = lbm_dec_as_char(args[1]) > 0 ? true : false;
+	switch (mode){
+		case 0:
+			app_adc_detach_adc(false);
+			app_adc_detach_buttons(false);
+			break;
+		case 1:
+			app_adc_detach_adc(detach);
+			break;
+		case 2:
+			app_adc_detach_buttons(detach);
+			break;
+		case 3:
+			app_adc_detach_adc(detach);
+			app_adc_detach_buttons(detach);
+			break;
+		default:
+			return lbm_enc_sym(SYM_EERROR);
+	}
+	return lbm_enc_sym(SYM_TRUE);
+}
 
-//static lbm_value ext_app_adc_override(lbm_value *args, lbm_uint argn) {
-//	CHECK_ARGN_NUMBER(2);
-//
-//	uint32_t target = lbm_dec_as_u32(args[0]);
-//	float val = lbm_dec_as_float(args[1]);
-//	bool state = val > 0.0 ? true : false;
-//
-//	switch (target){
-//		case 0:
-//			app_adc_adc1_override(val);
-//			break;
-//		case 1:
-//			app_adc_adc2_override(val);
-//			break;
-//		case 2:
-//			app_adc_rev_override(state);
-//			break;
-//		case 3:
-//			app_adc_cc_override(state);
-//			break;
-//		default:
-//			return lbm_enc_sym(SYM_EERROR);
-//	}
-//	return lbm_enc_sym(SYM_TRUE);
-//}
+static lbm_value ext_app_adc_override(lbm_value *args, lbm_uint argn) {
+	CHECK_ARGN_NUMBER(2);
+
+	uint32_t target = lbm_dec_as_u32(args[0]);
+	float val = lbm_dec_as_float(args[1]);
+	bool state = val > 0.0 ? true : false;
+
+	switch (target){
+		case 0:
+			app_adc_adc1_override(val);
+			break;
+		case 1:
+			app_adc_adc2_override(val);
+			break;
+		case 2:
+			app_adc_rev_override(state);
+			break;
+		case 3:
+			app_adc_cc_override(state);
+			break;
+		default:
+			return lbm_enc_sym(SYM_EERROR);
+	}
+	return lbm_enc_sym(SYM_TRUE);
+}
 
 
 // Motor set commands
@@ -3345,7 +3345,7 @@ void lispif_load_vesc_extensions(void) {
 	lbm_add_extension("select-motor", ext_select_motor);
 	lbm_add_extension("get-selected-motor", ext_get_selected_motor);
 //	lbm_add_extension("get-bms-val", ext_get_bms_val);
-//	lbm_add_extension("get-adc", ext_get_adc);
+	lbm_add_extension("get-adc", ext_get_adc);
 	lbm_add_extension("get-adc-decoded", ext_get_adc_decoded);
 	lbm_add_extension("systime", ext_systime);
 	lbm_add_extension("secs-since", ext_secs_since);
@@ -3369,8 +3369,8 @@ void lispif_load_vesc_extensions(void) {
 	lbm_add_extension("import", ext_empty);
 
 	// APP commands
-//	lbm_add_extension("app-adc-detach", ext_app_adc_detach);
-//	lbm_add_extension("app-adc-override", ext_app_adc_override);
+	lbm_add_extension("app-adc-detach", ext_app_adc_detach);
+	lbm_add_extension("app-adc-override", ext_app_adc_override);
 
 	// Motor set commands
 	lbm_add_extension("set-current", ext_set_current);

@@ -42,6 +42,7 @@
 #define CPU_PLL_MUL     RCC_PLL_MUL5
 #define CPU_MHZ  		(120*1000000)
 #define MS_TO_TICKS( xTimeInMs ) ( ( TickType_t ) ( ( ( TickType_t ) ( xTimeInMs ) * ( TickType_t ) configTICK_RATE_HZ ) / ( TickType_t ) 1000 ) )
+#define ST2MS(n) (((n) * 1000UL + configTICK_RATE_HZ - 1UL) / configTICK_RATE_HZ)
 
 #define PRIO_BELOW_NORMAL 4
 #define PRIO_NORMAL  5
@@ -61,6 +62,8 @@
 #define MODE_SLOW_SPEED			10
 #define MODE_DRIVE_SPEED		25
 #define MODE_SPORT_SPEED		KMH_NO_LIMIT
+
+
 
 
 //Debug
