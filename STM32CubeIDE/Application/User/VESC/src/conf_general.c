@@ -39,18 +39,28 @@
 
 app_configuration appconf;
 
+HAL_StatusTypeDef HAL_FLASHEx_EraseGD(FLASH_EraseInitTypeDef *pEraseInit, uint32_t *PageError);
+
 //#define LISP_SIZE	2048
 //uint8_t lisp_memory[LISP_SIZE];
 
-#define FLASH_PAGE_256_SIZE 0x1000
+#define FLASH_PAGE_BANK2_SIZE 0x1000
 
-#define LISP_MEMORY 	0x080F8000
-#define LISP_PAGES		4
-#define LISP_MEMORY_END	(LISP_MEMORY+(4*FLASH_PAGE_256_SIZE))
-#define QML_MEMORY 		0x080FC000
-#define QML_PAGES		4
-#define QML_MEMORY_END	(QML_MEMORY+(4*FLASH_PAGE_256_SIZE))
-//#define QML_MEMORY
+#define LISP_MEMORY 		0x080F8000
+#define LISP_PAGES			4
+#define LISP_MEMORY_END		(LISP_MEMORY+(LISP_PAGES*FLASH_PAGE_BANK2_SIZE))
+
+#define QML_MEMORY 			0x080FC000
+#define QML_PAGES			4
+#define QML_MEMORY_END		(QML_MEMORY+(QML_PAGES*FLASH_PAGE_BANK2_SIZE))
+
+#define APP_MEMORY 			0x080F7000
+#define APP_PAGES			1
+#define APP_MEMORY_END		(QML_MEMORY+(APP_PAGES*FLASH_PAGE_BANK2_SIZE))
+
+#define MCONF_MEMORY 		0x080F6000
+#define MCONF_PAGES			1
+#define MCONF_MEMORY_END	(QML_MEMORY+(APP_PAGES*FLASH_PAGE_BANK2_SIZE))
 
 int conf_general_autodetect_apply_sensors_foc(float current,
 		bool store_mcconf_on_success, bool send_mcconf_on_success) {
@@ -301,15 +311,15 @@ unsigned conf_calc_crc(mc_configuration* conf_in) {
 }
 
 uint8_t Flash_ReadByte_MC(uint32_t x){
-	uint8_t data[4];
-	*(uint32_t*)data = (*(__IO uint32_t*)(ADDR_FLASH_PAGE_127+((x/4)*4)));
-	return data[x%4];
+	uint8_t *data;
+	data = (uint8_t*)MCONF_MEMORY;
+	return data[x];
 }
 
 uint8_t Flash_ReadByte_APP(uint32_t x){
-	uint8_t data[4];
-	*(uint32_t*)data = (*(__IO uint32_t*)(ADDR_FLASH_PAGE_126+((x/4)*4)));
-	return data[x%4];
+	uint8_t *data;
+	data = (uint8_t*)APP_MEMORY;
+	return data[x];
 }
 
 /**
@@ -332,7 +342,7 @@ void conf_general_read_app_configuration(app_configuration *conf) {
 #endif
 	if(conf->crc != app_calc_crc(conf)) {
 		is_ok = false;
-//		mc_interface_fault_stop(FAULT_CODE_FLASH_CORRUPTION_APP_CFG, false, false);
+		mc_interface_fault_stop(FAULT_CODE_FLASH_CORRUPTION_APP_CFG, false, false);
 		//fault_data f;
 		//f.fault = FAULT_CODE_FLASH_CORRUPTION_APP_CFG;
 		//terminal_add_fault_data(&f);
@@ -353,52 +363,22 @@ void conf_general_read_app_configuration(app_configuration *conf) {
 void conf_general_read_mc_configuration(mc_configuration *conf, bool is_motor_2) {
 	uint8_t *conf_addr = (uint8_t*)conf;
 	//unsigned int base = is_motor_2 ? EEPROM_BASE_MCCONF_2 : EEPROM_BASE_MCCONF;
-
+	bool is_ok = true;
 	for (unsigned int i = 0;i < (sizeof(mc_configuration));i++) {
 		conf_addr[i] = Flash_ReadByte_MC(i);
 	}
 
-	if(conf->crc != conf_calc_crc(conf)) {
-//		mc_interface_fault_stop(FAULT_CODE_FLASH_CORRUPTION_MC_CFG, is_motor_2, false);
+	if(conf->crc != mc_interface_calc_crc(conf, is_motor_2)) {
+		is_ok = false;
+		mc_interface_fault_stop(FAULT_CODE_FLASH_CORRUPTION_MC_CFG, is_motor_2, false);
 		//fault_data f;
 		//f.fault = FAULT_CODE_FLASH_CORRUPTION_MC_CFG;
 		//terminal_add_fault_data(&f);
 	}
 
-
-}
-
-bool conf_general_write_flash(uint8_t page, uint8_t * data, uint16_t size){
-	uint32_t word;
-	uint8_t byte=0;
-	uint8_t * word_ptr = (uint8_t*)&word;
-	uint32_t flash_incr=0;
-
-	HAL_FLASH_Unlock();
-
-	uint32_t page_error = 0;
-	FLASH_EraseInitTypeDef s_eraseinit;
-	s_eraseinit.TypeErase   = FLASH_TYPEERASE_PAGES;
-	s_eraseinit.PageAddress = 0x08000000 + ((uint32_t)page*PAGE_SIZE);
-	s_eraseinit.NbPages     = 1;
-	HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
-
-	for (unsigned int i = 0;i < size;i++) {
-
-		word_ptr[byte] = data[i];
-		byte++;
-		if(byte==4){
-			byte=0;
-			HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, s_eraseinit.PageAddress+(flash_incr*4), *((uint32_t*)word_ptr));
-			word=0;
-			flash_incr++;
-		}
+	if (!is_ok) {
+		confgenerator_set_defaults_mcconf(conf);
 	}
-	if(byte!=0){
-		HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, s_eraseinit.PageAddress+(flash_incr*4), *((uint32_t*)word_ptr));
-	}
-	HAL_FLASH_Lock();
-	return true;
 }
 
 /**
@@ -410,11 +390,11 @@ bool conf_general_write_flash(uint8_t page, uint8_t * data, uint16_t size){
 bool conf_general_store_app_configuration(app_configuration *conf) {
 	bool is_ok = true;
 
-
 	conf->crc = app_calc_crc(conf);
 
+	conf_general_erase_flash(APP_MEMORY, APP_PAGES);
 
-	is_ok = conf_general_write_flash(APP_PAGE, (uint8_t*)conf, sizeof(app_configuration));
+	is_ok = conf_general_write_fl(APP_MEMORY, (uint8_t*)conf, sizeof(app_configuration));
 
 	vTaskDelay(500);
 
@@ -430,11 +410,11 @@ bool conf_general_store_app_configuration(app_configuration *conf) {
 bool conf_general_store_mc_configuration(mc_configuration *conf, bool is_motor_2) {
 	bool is_ok = true;
 
-	conf->crc = conf_calc_crc(conf);
+	conf->crc = mc_interface_calc_crc(conf, is_motor_2);
 
-	HAL_FLASH_Unlock();
+	conf_general_erase_flash(MCONF_MEMORY, MCONF_PAGES);
 
-	is_ok = conf_general_write_flash(CONF_PAGE, (uint8_t*)conf, sizeof(mc_configuration));
+	is_ok = conf_general_write_fl(MCONF_MEMORY, (uint8_t*)conf, sizeof(mc_configuration));
 
 	vTaskDelay(500);
 
@@ -977,7 +957,7 @@ int conf_general_detect_apply_all_foc_can(bool detect_can, float max_power_loss,
 }
 
 FLASH_ProcessTypeDef pFlash;
-#define FLASH_PAGE_256_SIZE 0x1000
+#define FLASH_PAGE_BANK2_SIZE 0x1000
 HAL_StatusTypeDef HAL_FLASHEx_EraseGD(FLASH_EraseInitTypeDef *pEraseInit, uint32_t *PageError)
 {
   HAL_StatusTypeDef status = HAL_ERROR;
@@ -996,8 +976,8 @@ HAL_StatusTypeDef HAL_FLASHEx_EraseGD(FLASH_EraseInitTypeDef *pEraseInit, uint32
 
 	/* Erase page by page to be done*/
 	for(address = pEraseInit->PageAddress;
-		address < ((pEraseInit->NbPages * FLASH_PAGE_256_SIZE) + pEraseInit->PageAddress);
-		address += FLASH_PAGE_256_SIZE)
+		address < ((pEraseInit->NbPages * FLASH_PAGE_BANK2_SIZE) + pEraseInit->PageAddress);
+		address += FLASH_PAGE_BANK2_SIZE)
 	{
 	  FLASH_PageErase(address);
 
@@ -1023,7 +1003,7 @@ HAL_StatusTypeDef HAL_FLASHEx_EraseGD(FLASH_EraseInitTypeDef *pEraseInit, uint32
   return status;
 }
 
-bool conf_general_erase_flash_code(uint32_t addr, uint32_t pages){
+bool conf_general_erase_flash(uint32_t addr, uint32_t pages){
 
 	HAL_FLASH_Unlock();
 
@@ -1039,7 +1019,7 @@ bool conf_general_erase_flash_code(uint32_t addr, uint32_t pages){
 	return true;
 }
 
-bool conf_general_write_flcode(uint32_t base, uint8_t * data, uint16_t size){
+bool conf_general_write_fl(uint32_t base, uint8_t * data, uint16_t size){
 	uint32_t word;
 	uint8_t byte=0;
 	uint8_t * word_ptr = (uint8_t*)&word;
@@ -1069,8 +1049,16 @@ bool conf_general_write_flcode(uint32_t base, uint8_t * data, uint16_t size){
 
 
 uint16_t conf_general_write_code(int ind, uint32_t offset, uint8_t *data, uint32_t len) {
-	conf_general_write_flcode(LISP_MEMORY + offset, data, len);
-	//memcpy(lisp_memory + offset, data, len);
+#ifdef USE_LISPBM
+	if (ind == CODE_IND_LISP) {
+		if((QML_MEMORY+offset+len) > LISP_MEMORY_END) return 0;
+		conf_general_write_fl(LISP_MEMORY + offset, data, len);
+	}
+#endif
+	if (ind == CODE_IND_QML) {
+		if((QML_MEMORY+offset+len) > QML_MEMORY_END) return 0;
+		conf_general_write_fl(QML_MEMORY + offset, data, len);
+	}
 	return 1;
 }
 
@@ -1078,11 +1066,11 @@ uint16_t conf_general_erase_code(int ind) {
 #ifdef USE_LISPBM
 	if (ind == CODE_IND_LISP) {
 		//lispif_stop_lib();
-		conf_general_erase_flash_code(LISP_MEMORY, LISP_PAGES);
+		conf_general_erase_flash(LISP_MEMORY, LISP_PAGES);
 	}
 #endif
 	if (ind == CODE_IND_QML){
-		conf_general_erase_flash_code(QML_MEMORY, QML_PAGES);
+		conf_general_erase_flash(QML_MEMORY, QML_PAGES);
 	}
 	return FLASH_COMPLETE;
 }

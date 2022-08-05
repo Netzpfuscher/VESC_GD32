@@ -54,5 +54,8 @@ uint16_t conf_general_erase_code(int ind);
 uint8_t* conf_general_code_data(int ind);
 uint32_t conf_general_code_size(int ind);
 
+bool conf_general_erase_flash(uint32_t addr, uint32_t pages);
+bool conf_general_write_fl(uint32_t base, uint8_t * data, uint16_t size);
+
 #endif /* CONF_GENERAL_H_ */
 
