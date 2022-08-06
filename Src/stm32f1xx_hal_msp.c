@@ -235,6 +235,18 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
         HAL_GPIO_Init(ADC3_INJ_4_PORT, &GPIO_InitStruct);
 #endif
 
+#if ADC3_INJ_4_ENABLED
+        GPIO_InitStruct.Pin = ADC3_INJ_4_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC3_INJ_4_PORT, &GPIO_InitStruct);
+#endif
+
+#if ADC3_REG_0_ENABLED
+        GPIO_InitStruct.Pin = ADC3_REG_0_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC3_REG_0_PORT, &GPIO_InitStruct);
+#endif
+
 
   /* USER CODE BEGIN ADC2_MspInit 1 */
 

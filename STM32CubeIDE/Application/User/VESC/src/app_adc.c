@@ -278,11 +278,11 @@ void adc_thread(void * arg){
 		bool cc_button = false;
 		bool rev_button = false;
 		if (use_rx_tx_as_buttons) {
-			cc_button = !HAL_GPIO_ReadPin(HW_UART_TX_PORT, HW_UART_TX_PIN);
+			cc_button = !READ_BUTTON_UART_CC;
 			if (config.cc_button_inverted) {
 				cc_button = !cc_button;
 			}
-			rev_button = !HAL_GPIO_ReadPin(HW_UART_RX_PORT, HW_UART_RX_PIN);
+			rev_button = !READ_BUTTON_UART_REV;
 			if (config.rev_button_inverted) {
 				rev_button = !rev_button;
 			}
@@ -293,12 +293,12 @@ void adc_thread(void * arg){
 					config.ctrl_type == ADC_CTRL_TYPE_CURRENT_NOREV_BRAKE_BUTTON ||
 					config.ctrl_type == ADC_CTRL_TYPE_DUTY_REV_BUTTON ||
 					config.ctrl_type == ADC_CTRL_TYPE_PID_REV_BUTTON) {
-				rev_button = !HAL_GPIO_ReadPin(HW_ICU_GPIO, HW_ICU_PIN);
+				rev_button = !READ_BUTTON_ICU_CC;
 				if (config.rev_button_inverted) {
 					rev_button = !rev_button;
 				}
 			} else {
-				cc_button = !HAL_GPIO_ReadPin(HW_ICU_GPIO, HW_ICU_PIN);
+				cc_button = !READ_BUTTON_ICU_CC;
 				if (config.cc_button_inverted) {
 					cc_button = !cc_button;
 				}

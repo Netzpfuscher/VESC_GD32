@@ -173,7 +173,7 @@ void button_process(void) {
 		callback(evt);
 	}
 
-	switch( getButtonEvent() ){
+	switch( evt ){
 		  case NO_PRESS : break ;
 		  case SINGLE_PRESS : {
 		  } break ;

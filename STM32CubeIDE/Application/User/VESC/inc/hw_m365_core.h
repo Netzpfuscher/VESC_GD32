@@ -86,6 +86,14 @@
 #define ADC3_INJ_4_CH			ADC_CHANNEL_0
 #define ADC3_INJ_4_TIM			ADC_SAMPLETIME_1CYCLE_5
 
+
+//Regular
+#define ADC3_REG_0_ENABLED		1
+#define ADC3_REG_0_PORT			GPIOA
+#define ADC3_REG_0_PIN			GPIO_PIN_0
+#define ADC3_REG_0_CH			ADC_CHANNEL_0
+
+
 //COMM
 #define VESC_USART_DMA			huart3
 #define VESC_USART_TX_DMA		hdma_usart3_tx
@@ -97,6 +105,7 @@
 
 //Global
 #define HW_HAS_3_SHUNTS
+#define USE_LISPBM
 
 //Shutdown
 #define HW_SHUTDOWN_HOLD_ON()
@@ -140,14 +149,30 @@
 #define HW_HALL_ENC_PIN2		GPIO_PIN_5
 #define HW_HALL_ENC_PIN3		GPIO_PIN_0
 
-#define READ_HALL1() HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO1, HW_HALL_ENC_PIN1)
-#define READ_HALL2() HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO2, HW_HALL_ENC_PIN2)
-#define READ_HALL3() HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO3, HW_HALL_ENC_PIN3)
+#define READ_HALL1() 			HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO1, HW_HALL_ENC_PIN1)
+#define READ_HALL2() 			HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO2, HW_HALL_ENC_PIN2)
+#define READ_HALL3() 			HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO3, HW_HALL_ENC_PIN3)
 
 //Ext ADC
 #define ADC_IND_EXT				ADC3->JDR2
 #define ADC_IND_EXT2			0
 #define ADC_IND_EXT3			0
+
+//Aux
+#define AUX_PORT				GPIOA
+#define AUX_PIN					GPIO_PIN_15
+#define AUX2_PORT
+#define AUX2_PIN
+
+#define AUX_ON()				HAL_GPIO_WritePin(AUX_PORT, AUX_PIN, GPIO_PIN_SET);
+#define AUX_OFF()				HAL_GPIO_WritePin(AUX_PORT, AUX_PIN, GPIO_PIN_RESET);
+#define AUX2_ON()
+#define AUX2_OFF()
+
+//Buttons
+#define READ_BUTTON_UART_CC		1		//HAL_GPIO_ReadPin(HW_UART_TX_PORT, HW_UART_TX_PIN)
+#define READ_BUTTON_UART_REV	1		//HAL_GPIO_ReadPin(HW_UART_RX_PORT, HW_UART_RX_PIN)
+#define READ_BUTTON_ICU_CC		1		//HAL_GPIO_ReadPin(HW_ICU_GPIO, HW_ICU_PIN)
 
 //Current
 
@@ -165,7 +190,6 @@
 #define ADC_V_L1				ADC1->JDR2
 #define ADC_V_L2				ADC2->JDR2
 #define ADC_V_L3				ADC1->JDR3
-
 
 #define ADC_VOLTS_PH_FACTOR 1.0
 #define ADC_VOLTS_INPUT_FACTOR 1.0
@@ -195,8 +219,5 @@
 #define IS_DRV_FAULT() 0
 #define IS_DRV_FAULT_2() 0
 #define HW_RESET_DRV_FAULTS()
-
-#define USE_LISPBM
-
 
 #endif /* HW_M365_CORE_H_ */
