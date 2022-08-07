@@ -1051,7 +1051,7 @@ bool conf_general_write_fl(uint32_t base, uint8_t * data, uint16_t size){
 uint16_t conf_general_write_code(int ind, uint32_t offset, uint8_t *data, uint32_t len) {
 #ifdef USE_LISPBM
 	if (ind == CODE_IND_LISP) {
-		if((QML_MEMORY+offset+len) > LISP_MEMORY_END) return 0;
+		if((LISP_MEMORY+offset+len) > LISP_MEMORY_END) return 0;
 		conf_general_write_fl(LISP_MEMORY + offset, data, len);
 	}
 #endif

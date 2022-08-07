@@ -1596,7 +1596,7 @@ static void update_override_limits(volatile motor_if_state_t *motor, volatile mc
 
 	const float duty_now_abs = fabsf(mc_interface_get_duty_cycle_now());
 
-	UTILS_LP_FAST(motor->m_temp_fet, NTC_TEMP(is_motor_1 ? ADC_IND_TEMP_MOS : ADC_IND_TEMP_MOS_M2), 0.1);
+	UTILS_LP_FAST(motor->m_temp_fet, NTC_TEMP(is_motor_1 ? ADC_IND_TEMP_MOS : ADC_IND_TEMP_MOS_M2), 0.01);
 	float temp_motor = 0.0;
 
 //	switch(conf->m_motor_temp_sens_type) {

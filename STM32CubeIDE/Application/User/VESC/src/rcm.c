@@ -54,6 +54,8 @@ void rcm_thread(void * arg){
 				LL_ADC_REG_ReadConversionData12(conv->regADC );
 				LL_ADC_REG_StartConversionSWStart(conv->regADC);
 				vTaskDelay(1);
+				LL_ADC_REG_StartConversionSWStart(conv->regADC);
+				vTaskDelay(1);
 				*conv->result_ptr = LL_ADC_REG_ReadConversionData12(conv->regADC);
 				conv->dt =  (xTaskGetTickCount() - conv->last_time) * (1.0/configTICK_RATE_HZ);
 				conv->last_time = xTaskGetTickCount();

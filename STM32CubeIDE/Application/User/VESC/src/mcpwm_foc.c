@@ -270,7 +270,7 @@ void mcpwm_foc_init(mc_configuration *conf_m1, mc_configuration *conf_m2) {
 
 
 	rcm_init();
-	rcm_add_conversion(ADC_TEMP_MOS, ADC_CH_TEMP_MOS, ADC_SAMPLETIME_41CYCLES_5, MS_TO_TICKS(500) , &reg_adc[0]);
+	rcm_add_conversion(ADC_TEMP_MOS, ADC_CH_TEMP_MOS, ADC_SAMPLETIME_41CYCLES_5, MS_TO_TICKS(2000) , &reg_adc[0]);
 	rcm_add_conversion(ADC_INPUT_VOLTAGE, ADC_CH_INPUT_VOLTAGE, ADC_SAMPLETIME_41CYCLES_5, 0, &reg_adc[1]);
 
 	if (m_motor_1.m_conf->foc_offsets_cal_on_boot) {

@@ -154,7 +154,7 @@
 #define READ_HALL3() 			HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO3, HW_HALL_ENC_PIN3)
 
 //Ext ADC
-#define ADC_IND_EXT				ADC3->JDR2
+#define ADC_IND_EXT				0 //ADC3->JDR2
 #define ADC_IND_EXT2			0
 #define ADC_IND_EXT3			0
 

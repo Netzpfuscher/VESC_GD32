@@ -102,7 +102,7 @@ uint8_t buttonState() {
 eButtonEvent getButtonEvent()
 {
     static const uint32_t DOUBLE_GAP_MILLIS_MAX 	= MS_TO_TICKS(250);
-    static const uint32_t SINGLE_PRESS_MILLIS_MAX 	= MS_TO_TICKS(300);
+    static const uint32_t SINGLE_PRESS_MILLIS_MAX 	= MS_TO_TICKS(1000);
     static const uint32_t LONG_PRESS_MILLIS_MAX 	= MS_TO_TICKS(5000);
 
     static uint32_t button_down_ts = 0 ;

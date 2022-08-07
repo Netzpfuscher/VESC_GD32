@@ -48,9 +48,6 @@ static extension_fptr extension_storage[EXTENSION_STORAGE_SIZE];
 static lbm_tokenizer_string_state_t string_tok_state;
 static lbm_tokenizer_char_stream_t string_tok;
 
-//static thread_t *eval_tp = 0;
-//static THD_FUNCTION(eval_thread, arg);
-//static THD_WORKING_AREA(eval_thread_wa, 2048);
 void eval_thread(void * arg);
 static bool lisp_thd_running = false;
 static bool lisp_is_init = false;
@@ -65,10 +62,11 @@ void lispif_init(void) {
 	// Do not attempt to start lisp after a watchdog reset, in case lisp
 	// was the cause of it.
 	// TODO: Anything else to check?
+	lbm_eval_init();
+
 	if (!timeout_had_IWDG_reset() && terminal_get_first_fault() != FAULT_CODE_BOOTING_FROM_WATCHDOG_RESET) {
 		lispif_restart(false, true);
 	}
-	lbm_eval_init();
 	lisp_is_init=true;
 }
 

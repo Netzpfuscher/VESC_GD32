@@ -1082,12 +1082,12 @@ static lbm_value ext_foc_openloop(lbm_value *args, lbm_uint argn) {
 	return lbm_enc_sym(SYM_TRUE);
 }
 
-//static lbm_value ext_foc_beep(lbm_value *args, lbm_uint argn) {
-//	CHECK_ARGN_NUMBER(3);
-//	timeout_reset();
-//	mcpwm_foc_beep(lbm_dec_as_float(args[0]), lbm_dec_as_float(args[1]), lbm_dec_as_float(args[2]));
-//	return lbm_enc_sym(SYM_TRUE);
-//}
+static lbm_value ext_foc_beep(lbm_value *args, lbm_uint argn) {
+	CHECK_ARGN_NUMBER(3);
+	timeout_reset();
+	mcpwm_foc_beep(lbm_dec_as_float(args[0]), lbm_dec_as_float(args[1]), lbm_dec_as_float(args[2]));
+	return lbm_enc_sym(SYM_TRUE);
+}
 
 // Motor get commands
 
@@ -3388,7 +3388,7 @@ void lispif_load_vesc_extensions(void) {
 	lbm_add_extension("set-rpm", ext_set_rpm);
 	lbm_add_extension("set-pos", ext_set_pos);
 	lbm_add_extension("foc-openloop", ext_foc_openloop);
-//	lbm_add_extension("foc-beep", ext_foc_beep);
+	lbm_add_extension("foc-beep", ext_foc_beep);
 
 	// Motor get commands
 	lbm_add_extension("get-current", ext_get_current);
