@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//#include "ch.h"
+#include "ch.h"
 //#include "hal.h"
 #include <commands.h>
 #include "terminal.h"
@@ -34,6 +34,7 @@
 #include "mempools.h"
 #include "crc.h"
 #include "firmware_metadata.h"
+#include "system.h"
 
 #include "FreeRTOS.h"
 
@@ -178,7 +179,7 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 		//chSysLock();
 		volatile int t1_cnt = TIM1->CNT;
 		//volatile int t8_cnt = TIM8->CNT;
-		volatile int t1_cnt2 = TIM1->CNT;
+		//volatile int t1_cnt2 = TIM1->CNT;
 		volatile int t2_cnt = TIM2->CNT;
 		volatile int dir1 = !!(TIM1->CR1 & (1 << 4));
 		//volatile int dir8 = !!(TIM8->CR1 & (1 << 4));
@@ -189,7 +190,7 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 		int duty3 = TIM1->CCR3;
 		int top = TIM1->ARR;
 		//int voltage_samp = TIM8->CCR1;
-		//int current1_samp = TIM1->CCR4;
+		int current1_samp = TIM1->CCR4;
 		//int current2_samp = TIM8->CCR2;
 
 		commands_printf(phandle, "Tim1 CNT: %i", t1_cnt);
@@ -203,7 +204,7 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 		commands_printf(phandle, "Dir1: %u", dir1);
 		//commands_printf(phandle, "Dir8: %u", dir8);
 		//commands_printf(phandle, "Voltage sample: %u", voltage_samp);
-		//commands_printf(phandle, "Current 1 sample: %u", current1_samp);
+		commands_printf(phandle, "Current 1 sample: %u", current1_samp);
 		//commands_printf(phandle, "Current 2 sample: %u\n", current2_samp);
 	} else if (strcmp(argv[0], "volt") == 0) {
 		commands_printf(phandle, "Input voltage: %.2f\n", (double)mc_interface_get_input_voltage_filtered());

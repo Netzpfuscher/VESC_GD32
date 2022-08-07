@@ -611,7 +611,7 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 					uint8_t send_buffer[PACKET_SIZE(20)];
 					uint8_t * buffer = send_buffer + PACKET_HEADER;
 					buffer[ind++] = COMM_GET_DECODED_CHUK;
-					buffer_append_int32(buffer, (int32_t)(0 * 1000000.0), &ind);
+					buffer_append_int32(buffer, (int32_t)(app_nunchuk_get_decoded_y() * 1000000.0), &ind);
 					packet_send_packet(send_buffer, ind, phandle);
 				} break;
 
@@ -647,7 +647,7 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 						chuck_d_tmp.rev_has_state = false;
 						chuck_d_tmp.is_rev = false;
 					}
-					//VescToStm_nunchuk_update_output(&chuck_d_tmp);
+					app_nunchuk_update_output(&chuck_d_tmp);
 				} break;
 
 				case COMM_CUSTOM_APP_DATA:

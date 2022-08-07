@@ -93,6 +93,10 @@
 #define ADC3_REG_0_PIN			GPIO_PIN_0
 #define ADC3_REG_0_CH			ADC_CHANNEL_0
 
+#define ADC3_REG_1_ENABLED		1
+#define ADC3_REG_1_PORT			GPIOA
+#define ADC3_REG_1_PIN			GPIO_PIN_2
+#define ADC3_REG_1_CH			ADC_CHANNEL_2
 
 //COMM
 #define VESC_USART_DMA			huart3

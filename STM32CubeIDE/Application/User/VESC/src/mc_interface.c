@@ -394,6 +394,7 @@ const char* mc_interface_fault_to_string(mc_fault_code fault) {
 	case FAULT_CODE_ENCODER_SPI: return "FAULT_CODE_ENCODER_SPI"; break;
 	case FAULT_CODE_ENCODER_SINCOS_BELOW_MIN_AMPLITUDE: return "FAULT_CODE_ENCODER_SINCOS_BELOW_MIN_AMPLITUDE"; break;
 	case FAULT_CODE_ENCODER_SINCOS_ABOVE_MAX_AMPLITUDE: return "FAULT_CODE_ENCODER_SINCOS_ABOVE_MAX_AMPLITUDE"; break;
+	case FAULT_CODE_ENCODER_FAULT: return "FAULT_CODE_ENCODER_FAULT"; break;
     case FAULT_CODE_FLASH_CORRUPTION: return "FAULT_CODE_FLASH_CORRUPTION";
     case FAULT_CODE_FLASH_CORRUPTION_APP_CFG: return "FAULT_CODE_FLASH_CORRUPTION_APP_CFG";
     case FAULT_CODE_FLASH_CORRUPTION_MC_CFG: return "FAULT_CODE_FLASH_CORRUPTION_MC_CFG";
@@ -1596,7 +1597,7 @@ static void update_override_limits(volatile motor_if_state_t *motor, volatile mc
 
 	const float duty_now_abs = fabsf(mc_interface_get_duty_cycle_now());
 
-	UTILS_LP_FAST(motor->m_temp_fet, NTC_TEMP(is_motor_1 ? ADC_IND_TEMP_MOS : ADC_IND_TEMP_MOS_M2), 0.01);
+	UTILS_LP_FAST(motor->m_temp_fet, NTC_TEMP(is_motor_1 ? ADC_IND_TEMP_MOS : ADC_IND_TEMP_MOS_M2), 0.1);
 	float temp_motor = 0.0;
 
 //	switch(conf->m_motor_temp_sens_type) {

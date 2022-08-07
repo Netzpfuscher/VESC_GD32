@@ -102,6 +102,7 @@ void HAL_MspInit(void)
 void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   if(hadc->Instance==ADC1)
   {
   /* USER CODE BEGIN ADC1_MspInit 0 */
@@ -122,6 +123,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     PA7     ------> ADC1_IN7
     PB1     ------> ADC1_IN9
     */
+
 #if ADC1_INJ_1_ENABLED
         GPIO_InitStruct.Pin = ADC1_INJ_1_PIN;
         GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
@@ -245,6 +247,12 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
         GPIO_InitStruct.Pin = ADC3_REG_0_PIN;
         GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
         HAL_GPIO_Init(ADC3_REG_0_PORT, &GPIO_InitStruct);
+#endif
+
+#if ADC3_REG_1_ENABLED
+        GPIO_InitStruct.Pin = ADC3_REG_1_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        HAL_GPIO_Init(ADC3_REG_1_PORT, &GPIO_InitStruct);
 #endif
 
 

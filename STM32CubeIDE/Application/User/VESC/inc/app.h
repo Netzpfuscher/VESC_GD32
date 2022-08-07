@@ -29,20 +29,17 @@ unsigned app_calc_crc(app_configuration* conf);
 void task_app_init(port_str * port);
 void task_app_kill();
 void my_uart_send_data(unsigned char *buf, unsigned int len, port_str * port);
-//float app_adc_get_decoded_level(void);
-//float app_adc_get_decoded_level2(void);
-//float app_adc_get_voltage(void);
-//float app_adc_get_voltage2(void);
-//void app_adc_stop_output(void);
-//void app_adc_set_mode(uint8_t mode_bit);
-//void app_adc_clear_mode(uint8_t mode_bit);
-//void app_adc_speed_mode(uint8_t speed);
-//void app_adc_set_adc(uint8_t AD1, uint8_t AD2);
-//void app_timer_update_period();
-//void app_adc_init_timer();
-//void app_check_timer();
 
 
+void app_nunchuk_start(void);
+void app_nunchuk_stop(void);
+void app_nunchuk_configure(chuk_config *conf);
+float app_nunchuk_get_decoded_x(void);
+float app_nunchuk_get_decoded_y(void);
+bool app_nunchuk_get_bt_c(void);
+bool app_nunchuk_get_bt_z(void);
+bool app_nunchuk_get_is_rev(void);
+void app_nunchuk_update_output(chuck_data *data);
 
 void app_adc_start(bool use_rx_tx);
 void app_adc_stop(void);

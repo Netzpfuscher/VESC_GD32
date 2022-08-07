@@ -30,6 +30,7 @@
 #include "conf_general.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "lispif.h"
 
 
 TaskHandle_t LEDHandle;

@@ -270,8 +270,8 @@ void mcpwm_foc_init(mc_configuration *conf_m1, mc_configuration *conf_m2) {
 
 
 	rcm_init();
-	rcm_add_conversion(ADC_TEMP_MOS, ADC_CH_TEMP_MOS, ADC_SAMPLETIME_41CYCLES_5, MS_TO_TICKS(2000) , &reg_adc[0]);
-	rcm_add_conversion(ADC_INPUT_VOLTAGE, ADC_CH_INPUT_VOLTAGE, ADC_SAMPLETIME_41CYCLES_5, 0, &reg_adc[1]);
+	rcm_add_conversion(ADC_TEMP_MOS, ADC_CH_TEMP_MOS, ADC_SAMPLETIME_71CYCLES_5, MS_TO_TICKS(400) , &reg_adc[0]);
+	rcm_add_conversion(ADC_INPUT_VOLTAGE, ADC_CH_INPUT_VOLTAGE, ADC_SAMPLETIME_41CYCLES_5, 1, &reg_adc[1]);
 
 	if (m_motor_1.m_conf->foc_offsets_cal_on_boot) {
 			systime_t cal_start_time = xTaskGetTickCount();
@@ -1890,6 +1890,8 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 	} else {
 		return;
 	}
+
+	rcm_start_conversion();
 
 	//uint32_t t_start = timer_time_now();
 

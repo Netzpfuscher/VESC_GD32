@@ -48,23 +48,6 @@
 #define PRIO_NORMAL  5
 #define PRIO_HIGHER  6
 
-//NVM
-#define APP_PAGE				255
-#define CONF_PAGE				254
-#define PAGE_SIZE				0x800
-
-//M365 specific
-#define KMH_NO_LIMIT			1337
-
-#define MODE_SLOW_CURR			0.5
-#define MODE_DRIVE_CURR			0.8
-#define MODE_SPORT_CURR			1.0
-#define MODE_SLOW_SPEED			10
-#define MODE_DRIVE_SPEED		25
-#define MODE_SPORT_SPEED		KMH_NO_LIMIT
-
-
-
 
 //Debug
 #define DEMCR_TRCENA    0x01000000

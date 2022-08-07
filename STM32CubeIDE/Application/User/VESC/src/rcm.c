@@ -39,6 +39,17 @@ rcm_handle rcm_add_conversion(ADC_TypeDef * adc, uint8_t channel, uint32_t sampl
 	return (rcm_handle)dll_insert_head(&dll, conv);
 }
 
+volatile RegConv_t * next_conversion;
+
+
+void rcm_start_conversion(void){
+	if(next_conversion){
+		LL_ADC_REG_SetSequencerRanks(next_conversion->regADC,LL_ADC_REG_RANK_1,__LL_ADC_DECIMAL_NB_TO_CHANNEL(next_conversion->channel));
+		LL_ADC_REG_StartConversionSWStart(next_conversion->regADC);
+	}
+	next_conversion=NULL;
+}
+
 
 void rcm_thread(void * arg){
 	DLL_t * dll_ptr = arg;
@@ -50,17 +61,26 @@ void rcm_thread(void * arg){
 			RegConv_t * conv = next->data;
 
 			if(conv->result_ptr && ((conv->last_time + conv->sample_delay) < xTaskGetTickCount())){
-				LL_ADC_REG_SetSequencerRanks(conv->regADC,LL_ADC_REG_RANK_1,__LL_ADC_DECIMAL_NB_TO_CHANNEL(conv->channel));
-				LL_ADC_REG_ReadConversionData12(conv->regADC );
-				LL_ADC_REG_StartConversionSWStart(conv->regADC);
-				vTaskDelay(1);
-				LL_ADC_REG_StartConversionSWStart(conv->regADC);
+				//LL_ADC_REG_SetSequencerRanks(conv->regADC,LL_ADC_REG_RANK_1,__LL_ADC_DECIMAL_NB_TO_CHANNEL(conv->channel));
+				//LL_ADC_REG_StartConversionSWStart(conv->regADC);
+				//LL_ADC_REG_ReadConversionData12(conv->regADC );
+				next_conversion = conv;
+				while (next_conversion != NULL){
+					vTaskDelay(0);
+				};
+				while (LL_ADC_IsActiveFlag_EOS (conv->regADC ) == 0u) {
+					vTaskDelay(0);
+				}
+				LL_ADC_ClearFlag_EOS(conv->regADC);
 				vTaskDelay(1);
 				*conv->result_ptr = LL_ADC_REG_ReadConversionData12(conv->regADC);
 				conv->dt =  (xTaskGetTickCount() - conv->last_time) * (1.0/configTICK_RATE_HZ);
 				conv->last_time = xTaskGetTickCount();
-
+			}else{
+				vTaskDelay(1);
 			}
+		}else{
+			vTaskDelay(1);
 		}
 
 	}
