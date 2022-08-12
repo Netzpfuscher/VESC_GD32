@@ -34,6 +34,7 @@
 
 //extern mc_configuration mc_conf;
 extern app_configuration appconf;
+extern bool conf_general_permanent_nrf_found;
 
 // Functions
 void conf_general_init(void);

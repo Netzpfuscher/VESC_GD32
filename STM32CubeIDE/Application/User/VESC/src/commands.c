@@ -44,10 +44,12 @@
 #include "shutdown.h"
 #include "lispif.h"
 #include "task_init.h"
-
+#include "nrf_driver.h"
+#include "crc.h"
 
 static volatile int fw_version_sent_cnt = 0;
 static disp_pos_mode display_position_mode;
+static int nrf_flags = 0;
 
 #define PRINTF_STACK_SIZE 128u
 
@@ -655,6 +657,7 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 
 				case COMM_NRF_START_PAIRING: {
 					int32_t ind = 0;
+					nrf_driver_start_pairing(buffer_get_int32(data, &ind), phandle);
 					uint8_t send_buffer[PACKET_SIZE(20)];
 					uint8_t * buffer = send_buffer + PACKET_HEADER;
 					buffer[ind++] = packet_id;
@@ -882,8 +885,40 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 					mempools_free_mcconf(mcconf);
 				} break;
 
-				case COMM_EXT_NRF_PRESENT:
-				case COMM_EXT_NRF_ESB_RX_DATA:
+				case COMM_EXT_NRF_PRESENT: {
+					if (!conf_general_permanent_nrf_found) {
+						if (len >= 1) {
+							nrf_flags = data[0];
+						}
+
+						nrf_driver_init_ext_nrf(phandle);
+						if (!nrf_driver_is_pairing()) {
+							const app_configuration *appconf = app_get_configuration();
+							uint8_t send_buffer[PACKET_SIZE(20)];
+							uint8_t * buffer = send_buffer + PACKET_HEADER;
+							buffer[0] = COMM_EXT_NRF_ESB_SET_CH_ADDR;
+							buffer[1] = appconf->app_nrf_conf.channel;
+							buffer[2] = appconf->app_nrf_conf.address[0];
+							buffer[3] = appconf->app_nrf_conf.address[1];
+							buffer[4] = appconf->app_nrf_conf.address[2];
+							packet_send_packet(send_buffer, 5, phandle);
+						}
+					}
+				} break;
+				case COMM_EXT_NRF_ESB_RX_DATA: {
+						if (len > 2) {
+							unsigned short crc = crc16((unsigned char*)data, len - 2);
+
+							if (crc	== ((unsigned short) data[len - 2] << 8 |
+									(unsigned short) data[len - 1])) {
+								nrf_driver_process_packet(data, len, phandle);
+							}
+						}
+					} break;
+				case COMM_SET_BLE_PIN:
+				case COMM_SET_BLE_NAME: {
+					packet_send_packet(data - 1, len + 1, phandle);
+				} break;
 				case COMM_APP_DISABLE_OUTPUT:{
 					int32_t ind = 0;
 					bool fwd_can = data[ind++];

@@ -39,6 +39,8 @@
 
 app_configuration appconf;
 
+bool conf_general_permanent_nrf_found = false;
+
 HAL_StatusTypeDef HAL_FLASHEx_EraseGD(FLASH_EraseInitTypeDef *pEraseInit, uint32_t *PageError);
 
 //#define LISP_SIZE	2048
