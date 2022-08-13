@@ -19,6 +19,7 @@ typedef uint32_t systime_t;
 #define chVTGetSystemTimeX()				xTaskGetTickCount()
 #define MS2ST(x)							MS_TO_TICKS(x)
 #define chRegSetThreadName(x)
+#define THD_FUNCTION(t_name,argument)		void t_name(void * argument)
 
 
 #endif /* APPLICATION_USER_VESC_INC_CH_H_ */

@@ -62,8 +62,7 @@ static volatile bool from_nrf = false;
 
 // Functions
 //static THD_FUNCTION(rx_thread, arg);
-//static THD_FUNCTION(tx_thread, arg);
-void tx_thread(void * arg);
+static THD_FUNCTION(tx_thread, arg);
 
 static int rf_tx_wrapper(char *data, int len, PACKET_STATE_t * phandle);
 
@@ -128,7 +127,7 @@ static int rf_tx_wrapper(char *data, int len, PACKET_STATE_t * phandle) {
 	return res;
 }
 
-void tx_thread(void * arg){
+static THD_FUNCTION(tx_thread, arg){
 
 	PACKET_STATE_t * phandle = arg;
 
@@ -205,74 +204,6 @@ void tx_thread(void * arg){
 
 }
 
-//void nrf_driver_send_buffer(unsigned char *data, unsigned int len) {
-//	uint8_t send_buffer[MAX_PL_LEN];
-//
-//	if (len <= (MAX_PL_LEN - 1)) {
-//		uint32_t ind = 0;
-//		send_buffer[ind++] = MOTE_PACKET_PROCESS_SHORT_BUFFER;
-//		memcpy(send_buffer + ind, data, len);
-//		ind += len;
-//		rf_tx_wrapper((char*)send_buffer, ind);
-//		nosend_cnt = 0;
-//	} else {
-//		unsigned int end_a = 0;
-//		unsigned int len2 = len - (MAX_PL_LEN - 5);
-//
-//		for (unsigned int i = 0;i < len2;i += (MAX_PL_LEN - 2)) {
-//			if (i > 255) {
-//				break;
-//			}
-//
-//			end_a = i + (MAX_PL_LEN - 2);
-//
-//			uint8_t send_len = (MAX_PL_LEN - 2);
-//			send_buffer[0] = MOTE_PACKET_FILL_RX_BUFFER;
-//			send_buffer[1] = i;
-//
-//			if ((i + (MAX_PL_LEN - 2)) <= len2) {
-//				memcpy(send_buffer + 2, data + i, send_len);
-//			} else {
-//				send_len = len2 - i;
-//				memcpy(send_buffer + 2, data + i, send_len);
-//			}
-//
-//			rf_tx_wrapper((char*)send_buffer, send_len + 2);
-//			nosend_cnt = 0;
-//		}
-//
-//		for (unsigned int i = end_a;i < len2;i += (MAX_PL_LEN - 3)) {
-//			uint8_t send_len = (MAX_PL_LEN - 3);
-//			send_buffer[0] = MOTE_PACKET_FILL_RX_BUFFER_LONG;
-//			send_buffer[1] = i >> 8;
-//			send_buffer[2] = i & 0xFF;
-//
-//			if ((i + (MAX_PL_LEN - 3)) <= len2) {
-//				memcpy(send_buffer + 3, data + i, send_len);
-//			} else {
-//				send_len = len2 - i;
-//				memcpy(send_buffer + 3, data + i, send_len);
-//			}
-//
-//			rf_tx_wrapper((char*)send_buffer, send_len + 3);
-//			nosend_cnt = 0;
-//		}
-//
-//		uint32_t ind = 0;
-//		send_buffer[ind++] = MOTE_PACKET_PROCESS_RX_BUFFER;
-//		send_buffer[ind++] = len >> 8;
-//		send_buffer[ind++] = len & 0xFF;
-//		unsigned short crc = crc16(data, len);
-//		send_buffer[ind++] = (uint8_t)(crc >> 8);
-//		send_buffer[ind++] = (uint8_t)(crc & 0xFF);
-//		memcpy(send_buffer + 5, data + len2, len - len2);
-//		ind += len - len2;
-//
-//		rf_tx_wrapper((char*)send_buffer, ind);
-//		nosend_cnt = 0;
-//	}
-//}
-
 void nrf_driver_process_packet(unsigned char *buf, unsigned char len, PACKET_STATE_t * phandle) {
 	MOTE_PACKET packet = buf[0];
 	chuck_data cdata;
@@ -320,43 +251,6 @@ void nrf_driver_process_packet(unsigned char *buf, unsigned char len, PACKET_STA
 		}
 	}
 	break;
-
-//	case MOTE_PACKET_PROCESS_RX_BUFFER: {
-//		ind = 1;
-//		int rxbuf_len = (unsigned int)buf[ind++] << 8;
-//		rxbuf_len |= (unsigned int)buf[ind++];
-//
-//		if (rxbuf_len > RX_BUFFER_SIZE) {
-//			break;
-//		}
-//
-//		uint8_t crc_high = buf[ind++];
-//		uint8_t crc_low = buf[ind++];
-//
-//		memcpy(rx_buffer + rxbuf_len - (len - ind), buf + ind, len - ind);
-//
-//		if (crc16(rx_buffer, rxbuf_len)
-//				== ((unsigned short) crc_high << 8
-//						| (unsigned short) crc_low)) {
-//
-//			// Wait a bit in case retries are still made
-//			chThdSleepMilliseconds(2);
-//
-//			from_nrf = true;
-//			commands_process_packet(rx_buffer, rxbuf_len, nrf_driver_send_buffer);
-//			from_nrf = false;
-//		}
-//	}
-//	break;
-
-//	case MOTE_PACKET_PROCESS_SHORT_BUFFER:
-//		// Wait a bit in case retries are still made
-//		chThdSleepMilliseconds(2);
-//
-//		from_nrf = true;
-//		commands_process_packet(buf + 1, len - 1, nrf_driver_send_buffer);
-//		from_nrf = false;
-//		break;
 
 	case MOTE_PACKET_PAIRING_INFO: {
 		ind = 1;
