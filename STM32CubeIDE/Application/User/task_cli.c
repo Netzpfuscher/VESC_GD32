@@ -43,7 +43,7 @@ void putbuffer(unsigned char *buf, unsigned int len, port_str * port){
 	HAL_UART_Transmit_DMA(port->uart, buf, len);
 	while(port->uart->hdmatx->State != HAL_DMA_STATE_READY){
 		port->uart->gState = HAL_UART_STATE_READY;
-		vTaskDelay(1);
+		vTaskDelay(0);
 	}
 	if(port->half_duplex) port->uart->Instance->CR1 |= USART_CR1_RE;
 	xSemaphoreGive(port->tx_semaphore);

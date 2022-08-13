@@ -395,7 +395,7 @@ void nrf_driver_process_packet(unsigned char *buf, unsigned char len, PACKET_STA
 		conf_general_store_app_configuration(&appconf);
 		app_set_configuration(&appconf);
 
-		commands_send_appconf(COMM_GET_APPCONF, &appconf, 0);
+		commands_send_appconf(COMM_GET_APPCONF, &appconf, phandle);
 
 		uint8_t send_buffer[PACKET_SIZE(5)];
 		uint8_t * data = send_buffer + PACKET_HEADER;

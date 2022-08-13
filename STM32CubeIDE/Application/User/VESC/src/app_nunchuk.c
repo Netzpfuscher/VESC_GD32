@@ -217,7 +217,7 @@ void app_nunchuk_update_output(chuck_data *data) {
 void output_thread(void * arg){
 	(void)arg;
 
-	//chRegSetThreadName("Nunchuk output");
+	chRegSetThreadName("Nunchuk output");
 
 	bool was_pid = false;
 
@@ -229,11 +229,6 @@ void output_thread(void * arg){
 
 		const float dt = (float)OUTPUT_ITERATION_TIME_MS / 1000.0;
 
-		if (timeout_has_timeout() || chuck_error != 0 || config.ctrl_type == CHUK_CTRL_TYPE_NONE) {
-			was_pid = false;
-			continue;
-		}
-
 		// Local timeout to prevent this thread from causing problems after not
 		// being used for a while.
 		if (TimeElapsedSinceX(last_update_time) > MS_TO_TICKS(LOCAL_TIMEOUT)) {
@@ -243,6 +238,11 @@ void output_thread(void * arg){
 			output_running = false;
 			vTaskDelete(NULL);
 			vTaskDelay(portMAX_DELAY);
+			continue;
+		}
+
+		if (timeout_has_timeout() || chuck_error != 0 || config.ctrl_type == CHUK_CTRL_TYPE_NONE) {
+			was_pid = false;
 			continue;
 		}
 
