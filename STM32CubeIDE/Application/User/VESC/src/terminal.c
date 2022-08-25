@@ -35,6 +35,7 @@
 #include "crc.h"
 #include "firmware_metadata.h"
 #include "system.h"
+#include "conf_general.h"
 
 #include "FreeRTOS.h"
 
@@ -43,15 +44,15 @@
 #include <math.h>
 
 // Settings
-#define FAULT_VEC_LEN						25
-#define CALLBACK_LEN						40
+#define FAULT_VEC_LEN						10
+#define CALLBACK_LEN						10
 
 // Private types
 typedef struct _terminal_callback_struct {
 	const char *command;
 	const char *help;
 	const char *arg_names;
-	void(*cbf)(int argc, const char **argv);
+	void(*cbf)(PACKET_STATE_t * phandle, int argc, const char **argv);
 } terminal_callback_struct;
 
 // Private variables
@@ -109,7 +110,7 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 
 	for (int i = 0;i < callback_write;i++) {
 		if (callbacks[i].cbf != 0 && strcmp(argv[0], callbacks[i].command) == 0) {
-			callbacks[i].cbf(argc, (const char**)argv);
+			callbacks[i].cbf(phandle, argc, (const char**)argv);
 			return;
 		}
 	}
@@ -950,7 +951,7 @@ void terminal_register_command_callback(
 		const char* command,
 		const char *help,
 		const char *arg_names,
-		void(*cbf)(int argc, const char **argv)) {
+		void(*cbf)(PACKET_STATE_t * phandle, int argc, const char **argv)) {
 
 	int callback_num = callback_write;
 
@@ -987,7 +988,7 @@ void terminal_register_command_callback(
 	}
 }
 
-void terminal_unregister_callback(void(*cbf)(int argc, const char **argv)) {
+void terminal_unregister_callback(void(*cbf)(PACKET_STATE_t * phandle, int argc, const char **argv)) {
 	for (int i = 0;i < callback_write;i++) {
 		if (callbacks[i].cbf == cbf) {
 			callbacks[i].cbf = 0;

@@ -127,7 +127,7 @@ static volatile struct {
 	const char *info_str;
 	int info_argn;
 	float info_args[2];
-} m_fault_data = {0, FAULT_CODE_NONE, 0, 0, {0, 0}};
+} m_fault_data = {.from_isr = false ,.is_second_motor=false, .fault_code=FAULT_CODE_NONE, .info_str=NULL, .info_argn=0, .info_args={0, 0}};
 
 // Private functions
 static void update_override_limits(volatile motor_if_state_t *motor, volatile mc_configuration *conf);

@@ -14,17 +14,20 @@
 //Set hw here:
 #define HW_M365
 
-#include "hw_m365_core.h"
-
-
 #ifdef HW_M365
+#include "hw_m365_core.h"
 #include "hw_m365.h"
 #endif
 
 #ifdef HW_M365_20S
+#include "hw_m365_core.h"
 #include "hw_m365_20s.h"
 #endif
 
+#ifdef HW_MP2
+#include "hw_mp2_core.h"
+#include "hw_mp2.h"
+#endif
 
 // Firmware version
 #define FW_VERSION_MAJOR			6

@@ -46,6 +46,7 @@
 #include "task_init.h"
 #include "nrf_driver.h"
 #include "crc.h"
+#include "command_cust.h"
 
 static volatile int fw_version_sent_cnt = 0;
 static disp_pos_mode display_position_mode;
@@ -1172,6 +1173,7 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 					break;
 				}
 				default:
+					command_cust_callback(phandle, data, packet_id);
 					break;
 				}
 }

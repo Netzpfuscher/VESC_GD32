@@ -35,13 +35,13 @@
 
 TaskHandle_t LEDHandle;
 
-
-
 void prv_LED_blink(uint32_t speed){
 	static uint16_t cnt=0;
 	if(cnt>speed){
 		cnt=0;
-		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+#if LED1_ENA
+		HAL_GPIO_TogglePin(LED1_PORT, LED1_PIN);
+#endif
 	}else{
 		cnt++;
 	}
@@ -61,6 +61,21 @@ void startup_thread(void * arg){
 void task_LED(void * argument)
 {
 	mc_interface_init();
+
+#if LED1_ENA
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+
+	/*Configure GPIO pin : LED_Pin */
+	GPIO_InitStruct.Pin = LED_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
+#endif
+
 	xTaskCreate(startup_thread, "tskStart", 3096, NULL, PRIO_NORMAL, NULL);
 
 	/* Infinite loop */

@@ -49,6 +49,8 @@ bool conf_general_store_app_configuration(app_configuration *conf);
 void conf_general_mcconf_hw_limits(mc_configuration *mcconf);
 int conf_general_detect_apply_all_foc_can(bool detect_can, float max_power_loss, float min_current_in, float max_current_in, float openloop_rpm, float sl_erpm, PACKET_STATE_t * phandle);
 bool conf_general_measure_flux_linkage_openloop(float current, float duty,float erpm_per_sec, float res, float ind, float *linkage,float *linkage_undriven, float *undriven_samples);
+int conf_general_autodetect_apply_sensors_foc(float current, bool store_mcconf_on_success, bool send_mcconf_on_success);
+int conf_general_detect_apply_all_foc(float max_power_loss, bool store_mcconf_on_success, bool send_mcconf_on_success);
 
 uint16_t conf_general_write_code(int ind, uint32_t offset, uint8_t *data, uint32_t len);
 uint16_t conf_general_erase_code(int ind);

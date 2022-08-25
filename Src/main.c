@@ -158,7 +158,9 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
+#if TPS_ENA
   HAL_GPIO_WritePin(TPS_ENA_GPIO_Port, TPS_ENA_Pin, GPIO_PIN_SET);
+#endif
   power_control(DEV_PWR_ON);
   /* USER CODE END RTOS_MUTEX */
 
@@ -181,7 +183,9 @@ int main(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   task_init(); //bring up user tasks
+#if TPS_ENA
   HAL_GPIO_WritePin(TPS_ENA_GPIO_Port, TPS_ENA_Pin, GPIO_PIN_SET);
+#endif
 
   /* USER CODE END RTOS_THREADS */
 
@@ -869,10 +873,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(TPS_ENA_GPIO_Port, TPS_ENA_Pin, GPIO_PIN_SET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+#if TPS_ENA
+  HAL_GPIO_WritePin(TPS_PORT, TPS_PIN, GPIO_PIN_SET);
+#endif
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(BRAKE_LIGHT_GPIO_Port, BRAKE_LIGHT_Pin, GPIO_PIN_RESET);
@@ -883,19 +886,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(PWR_BTN_GPIO_Port, &GPIO_InitStruct);
 
+#if TPS_ENA
   /*Configure GPIO pin : TPS_ENA_Pin */
   GPIO_InitStruct.Pin = TPS_ENA_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(TPS_ENA_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : LED_Pin */
-  GPIO_InitStruct.Pin = LED_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(TPS_PORT, &GPIO_InitStruct);
+#endif
 
   /*Configure GPIO pin : BRAKE_LIGHT_Pin */
   GPIO_InitStruct.Pin = BRAKE_LIGHT_Pin;

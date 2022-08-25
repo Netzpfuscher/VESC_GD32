@@ -5,10 +5,10 @@
  *      Author: jensk
  */
 
-#ifndef HW_M365_CORE_H_
-#define HW_M365_CORE_H_
+#ifndef HW_MP2_CORE_H_
+#define HW_MP2_CORE_H_
 
-#if defined(HW_M365) ||defined(HW_M365_20S)
+#ifdef HW_MP2
 
 //Injected configuration
 
@@ -100,11 +100,11 @@
 #define ADC3_REG_1_CH			ADC_CHANNEL_2
 
 //COMM
-#define VESC_USART_DMA			huart3
+#define VESC_USART_DMA			huart1
 #define VESC_USART_TX_DMA		hdma_usart3_tx
 #define VESC_USART_RX_DMA		hdma_usart3_rx
 
-#define APP_USART_DMA			huart1
+#define APP_USART_DMA			huart3
 #define APP_USART_TX_DMA		hdma_usart1_tx
 #define APP_USART_RX_DMA		hdma_usart1_rx
 
@@ -132,12 +132,12 @@
 #define HW_ICU_PIN				GPIO_PIN_14
 
 //LED
-#define LED1_ENA				1
+#define LED1_ENA				0
 #define LED1_PORT				GPIOD
 #define LED1_PIN				GPIO_PIN_1
 
 //Power enable
-#define TPS_ENA					1
+#define TPS_ENA					0
 #define TPS_PORT				GPIOC
 #define TPS_PIN					GPIO_PIN_15
 
@@ -152,17 +152,17 @@
 #define ADC_CH_TEMP_MOS			0
 #define ADC_IND_TEMP_MOS 		RCM[0].result
 #define NTC_RES(adc_val)		((4095.0 * 10000.0) / (4095 - adc_val) - 10000.0)
-#define NTC_TEMP(adc_ind)		(1.0 / ((logf(NTC_RES(reg_adc[0]) / 10000.0) / 3380.0) + (1.0 / 298.15)) - 273.15)
+#define NTC_TEMP(adc_ind)		(1.0 / ((logf(NTC_RES(0) / 10000.0) / 3380.0) + (1.0 / 298.15)) - 273.15) //(1.0 / ((logf(NTC_RES(reg_adc[0]) / 10000.0) / 3380.0) + (1.0 / 298.15)) - 273.15)
 #define MOTOR_TEMP_LPF 0.1
 
 //Hall
-#define HW_HALL_ENC_GPIO1 		GPIOB
-#define HW_HALL_ENC_GPIO2 		GPIOB
-#define HW_HALL_ENC_GPIO3 		GPIOB
+#define HW_HALL_ENC_GPIO1 		GPIOC
+#define HW_HALL_ENC_GPIO2 		GPIOC
+#define HW_HALL_ENC_GPIO3 		GPIOC
 
-#define HW_HALL_ENC_PIN1		GPIO_PIN_4
-#define HW_HALL_ENC_PIN2		GPIO_PIN_5
-#define HW_HALL_ENC_PIN3		GPIO_PIN_0
+#define HW_HALL_ENC_PIN1		GPIO_PIN_13
+#define HW_HALL_ENC_PIN2		GPIO_PIN_14
+#define HW_HALL_ENC_PIN3		GPIO_PIN_15
 
 #define READ_HALL1() 			HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO1, HW_HALL_ENC_PIN1)
 #define READ_HALL2() 			HAL_GPIO_ReadPin(HW_HALL_ENC_GPIO2, HW_HALL_ENC_PIN2)
@@ -236,4 +236,5 @@
 #define HW_RESET_DRV_FAULTS()
 
 #endif
-#endif /* HW_M365_CORE_H_ */
+
+#endif /* HW_MP2_CORE_H_ */

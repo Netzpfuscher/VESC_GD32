@@ -52,16 +52,16 @@ static volatile bool output_running = false;
 static volatile systime_t last_update_time;
 
 // Private functions
-static void terminal_cmd_nunchuk_status(int argc, const char **argv);
+static void terminal_cmd_nunchuk_status(PACKET_STATE_t * phandle, int argc, const char **argv);
 
 void app_nunchuk_configure(chuk_config *conf) {
 	config = *conf;
 
-//	terminal_register_command_callback(
-//			"nunchuk_status",
-//			"Print the status of the nunchuk app",
-//			0,
-//			terminal_cmd_nunchuk_status);
+	terminal_register_command_callback(
+			"nunchuk_status",
+			"Print the status of the nunchuk app",
+			0,
+			terminal_cmd_nunchuk_status);
 }
 
 void app_nunchuk_start(void) {
@@ -534,11 +534,11 @@ void output_thread(void * arg){
 	}
 }
 
-//static void terminal_cmd_nunchuk_status(int argc, const char **argv) {
-//	(void)argc;
-//	(void)argv;
-//
-//	commands_printf("Nunchuk Status");
-//	commands_printf("Output: %s", output_running ? "On" : "Off");
-//	commands_printf(" ");
-//}
+static void terminal_cmd_nunchuk_status(PACKET_STATE_t * phandle, int argc, const char **argv) {
+	(void)argc;
+	(void)argv;
+
+	commands_printf(phandle, "Nunchuk Status");
+	commands_printf(phandle, "Output: %s", output_running ? "On" : "Off");
+	commands_printf(phandle, " ");
+}

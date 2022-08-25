@@ -486,7 +486,9 @@ void adc_thread(void * arg){
 		}
 
 		// Reset timeout
-		timeout_reset();
+		if(adc_detached==false){
+			timeout_reset();
+		}
 
 		// If c is pressed and no throttle is used, maintain the current speed with PID control
 		static bool was_pid = false;

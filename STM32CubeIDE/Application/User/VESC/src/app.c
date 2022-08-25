@@ -57,6 +57,7 @@ void app_set_configuration(app_configuration *conf) {
 			app_adc_start(false);
 			break;
 		case APP_ADC_UART:
+			app_adc_start(false);
 			task_cli_init(&aux_uart);
 			break;
 		case APP_NUNCHUK:

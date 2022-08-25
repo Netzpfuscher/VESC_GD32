@@ -151,13 +151,17 @@ void power_control(uint8_t pwr)
 		/* Turn the PowerON line high to keep the board powered on even when
 		 * the power button is released
 		 */
-		HAL_GPIO_WritePin(TPS_ENA_GPIO_Port, TPS_ENA_Pin, GPIO_PIN_SET);
+#if TPS_ENA
+		HAL_GPIO_WritePin(TPS_PORT, TPS_PIN, GPIO_PIN_SET);
+#endif
 	} else if(pwr == DEV_PWR_OFF) {
 
 		vTaskDelay(1);
 
 		while(HAL_GPIO_ReadPin(PWR_BTN_GPIO_Port, PWR_BTN_Pin));
-		HAL_GPIO_WritePin(TPS_ENA_GPIO_Port, TPS_ENA_Pin, GPIO_PIN_RESET);
+#if TPS_ENA
+		HAL_GPIO_WritePin(TPS_PORT, TPS_PIN, GPIO_PIN_RESET);
+#endif
 		while(1);
 	} else if(pwr == DEV_PWR_RESTART) {
 		/* Restart the system */

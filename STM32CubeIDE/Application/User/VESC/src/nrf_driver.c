@@ -44,7 +44,7 @@ static mote_state mstate;
 static uint8_t rx_buffer[RX_BUFFER_SIZE];
 static int nosend_cnt;
 static int nrf_restart_rx_time;
-static int nrf_restart_tx_time;
+//static int nrf_restart_tx_time;
 
 static systime_t pairing_time_end = 0;
 static volatile bool pairing_active = false;
