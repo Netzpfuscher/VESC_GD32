@@ -173,7 +173,7 @@ void power_control(uint8_t pwr)
 void button_process(void) {
 	eButtonEvent evt = getButtonEvent();
 
-	if(callback != NULL){
+	if(callback != NULL && evt!=NO_PRESS){
 		callback(evt);
 	}
 

@@ -12,7 +12,7 @@
 #include "stdbool.h"
 
 //Set hw here:
-#define HW_M365
+#define HW_MP2
 
 #ifdef HW_M365
 #include "hw_m365_core.h"
