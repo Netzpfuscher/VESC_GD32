@@ -152,7 +152,7 @@
 #define ADC_CH_TEMP_MOS			0
 #define ADC_IND_TEMP_MOS 		RCM[0].result
 #define NTC_RES(adc_val)		((4095.0 * 10000.0) / (4095 - adc_val) - 10000.0)
-#define NTC_TEMP(adc_ind)		(1.0 / ((logf(NTC_RES(0) / 10000.0) / 3380.0) + (1.0 / 298.15)) - 273.15) //(1.0 / ((logf(NTC_RES(reg_adc[0]) / 10000.0) / 3380.0) + (1.0 / 298.15)) - 273.15)
+#define NTC_TEMP(adc_ind)		(1.0 / ((logf(NTC_RES(reg_adc[0]) / 10000.0) / 3380.0) + (1.0 / 298.15)) - 273.15)
 #define MOTOR_TEMP_LPF 0.1
 
 //Hall
