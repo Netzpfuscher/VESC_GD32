@@ -2964,13 +2964,13 @@ static void hfi_update(volatile motor_all_state_t *motor, float dt) {
 			motor->m_hfi.fft_bin1_func((float*)motor->m_hfi.buffer, &real_bin1, &imag_bin1);
 			motor->m_hfi.fft_bin2_func((float*)motor->m_hfi.buffer, &real_bin2, &imag_bin2);
 
-			float mag_bin_1 = NORM2_f(imag_bin1, real_bin1);
+			//float mag_bin_1 = NORM2_f(imag_bin1, real_bin1);
 			float angle_bin_1 = -utils_fast_atan2(imag_bin1, real_bin1);
 
 			angle_bin_1 += M_PI / 1.7; // Why 1.7??
 			utils_norm_angle_rad(&angle_bin_1);
 
-			float mag_bin_2 = NORM2_f(imag_bin2, real_bin2);
+			//float mag_bin_2 = NORM2_f(imag_bin2, real_bin2);
 			float angle_bin_2 = -utils_fast_atan2(imag_bin2, real_bin2) / 2.0;
 
 			// Assuming this thread is much faster than it takes to fill the HFI buffer completely,

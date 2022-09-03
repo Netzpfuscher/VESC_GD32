@@ -74,7 +74,7 @@ void terminal_top(PACKET_STATE_t * phandle){
         commands_printf(phandle, "Task info:");
 
 
-        commands_printf(phandle, "FOC ms: %f ", mcpwm_foc_get_last_adc_isr_duration());
+        commands_printf(phandle, "FOC ms: %f ", (double)mcpwm_foc_get_last_adc_isr_duration());
 
         commands_printf(phandle, "Tasks: %d",  taskCount);
 

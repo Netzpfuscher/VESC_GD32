@@ -355,7 +355,7 @@ static size_t _ftoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, d
 
   // test for very large values
   // standard printf behavior is to print EVERY whole number digit -- which could be 100s of characters overflowing your buffers == bad
-  if ((value > PRINTF_MAX_FLOAT) || (value < -PRINTF_MAX_FLOAT)) {
+  if ((value > (double)PRINTF_MAX_FLOAT) || (value < -(double)PRINTF_MAX_FLOAT)) {
 #if defined(PRINTF_SUPPORT_EXPONENTIAL)
     return _etoa(out, buffer, idx, maxlen, value, prec, width, flags);
 #else
@@ -385,7 +385,7 @@ static size_t _ftoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, d
   unsigned long frac = (unsigned long)tmp;
   diff = tmp - frac;
 
-  if (diff > 0.5) {
+  if (diff > (double)0.5) {
     ++frac;
     // handle rollover, e.g. case 0.99 with prec 1 is 1.0
     if (frac >= pow10[prec]) {
@@ -393,7 +393,7 @@ static size_t _ftoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, d
       ++whole;
     }
   }
-  else if (diff < 0.5) {
+  else if (diff < (double)0.5) {
   }
   else if ((frac == 0U) || (frac & 1U)) {
     // if halfway, round up if odd OR if last digit is 0
@@ -402,7 +402,7 @@ static size_t _ftoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, d
 
   if (prec == 0U) {
     diff = value - (double)whole;
-    if ((!(diff < 0.5) || (diff > 0.5)) && (whole & 1)) {
+    if ((!(diff < (double)0.5) || (diff > (double)0.5)) && (whole & 1)) {
       // exactly 0.5 and ODD, then round up
       // 1.5 -> 2, but 2.5 -> 2
       ++whole;

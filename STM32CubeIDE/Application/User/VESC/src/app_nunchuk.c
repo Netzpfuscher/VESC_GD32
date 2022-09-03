@@ -368,7 +368,7 @@ void output_thread(void * arg){
 		}
 
 		// Find lowest RPM and highest current
-		float rpm_local = fabsf(mc_interface_get_rpm());
+//		float rpm_local = fabsf(mc_interface_get_rpm());
 //		float rpm_lowest = rpm_local;
 		float current_highest = current_now;
 		float duty_highest_abs = fabsf(duty_now);
