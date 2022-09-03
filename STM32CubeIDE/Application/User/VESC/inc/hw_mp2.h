@@ -20,6 +20,8 @@
 #define VPHASE_R1 100000.0
 #define VPHASE_R2 3300.0
 
+#define HW_DEAD_TIME_NSEC		500.0
+
 //Limits
 // Setting limits
 #define HW_LIM_CURRENT			-300.0, 300.0

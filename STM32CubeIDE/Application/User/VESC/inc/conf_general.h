@@ -51,6 +51,7 @@ int conf_general_detect_apply_all_foc_can(bool detect_can, float max_power_loss,
 bool conf_general_measure_flux_linkage_openloop(float current, float duty,float erpm_per_sec, float res, float ind, float *linkage,float *linkage_undriven, float *undriven_samples);
 int conf_general_autodetect_apply_sensors_foc(float current, bool store_mcconf_on_success, bool send_mcconf_on_success);
 int conf_general_detect_apply_all_foc(float max_power_loss, bool store_mcconf_on_success, bool send_mcconf_on_success);
+uint8_t conf_general_calculate_deadtime(float deadtime_ns, float core_clock_freq);
 
 uint16_t conf_general_write_code(int ind, uint32_t offset, uint8_t *data, uint32_t len);
 uint16_t conf_general_erase_code(int ind);

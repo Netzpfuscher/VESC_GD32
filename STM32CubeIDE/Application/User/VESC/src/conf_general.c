@@ -64,6 +64,38 @@ HAL_StatusTypeDef HAL_FLASHEx_EraseGD(FLASH_EraseInitTypeDef *pEraseInit, uint32
 #define MCONF_PAGES			1
 #define MCONF_MEMORY_END	(QML_MEMORY+(APP_PAGES*FLASH_PAGE_BANK2_SIZE))
 
+/* Calculate DTG register */
+uint8_t conf_general_calculate_deadtime(float deadtime_ns, float core_clock_freq) {
+	uint8_t DTG = 0;
+	float timebase = 1.0 / (core_clock_freq / 1000000.0) * 1000.0;
+
+	if (deadtime_ns <= (timebase * 127.0)) {
+		DTG = deadtime_ns / timebase;
+	} else {
+		if (deadtime_ns <= ((63.0 + 64.0) * 2.0 * timebase)) {
+			DTG = deadtime_ns / (2.0 * timebase) - 64.0;
+			DTG |= 0x80;
+		} else {
+			if (deadtime_ns <= ((31.0 + 32.0) * 8.0 * timebase)) {
+				DTG = deadtime_ns / (8.0 * timebase) - 32.0;
+				DTG |= 0xC0;
+			} else {
+				if (deadtime_ns <= ((31.0 + 32) * 16 * timebase)) {
+					DTG = deadtime_ns / (16.0 * timebase) - 32.0;
+					DTG |= 0xE0;
+				} else {
+					// Deadtime requested is longer than max achievable. Set deadtime at
+					// longest possible value
+					DTG = 0xFF;
+					assert_param(1); //catch this
+				}
+			}
+		}
+	}
+
+	return DTG;
+}
+
 int conf_general_autodetect_apply_sensors_foc(float current,
 		bool store_mcconf_on_success, bool send_mcconf_on_success) {
 	int result = -1;
