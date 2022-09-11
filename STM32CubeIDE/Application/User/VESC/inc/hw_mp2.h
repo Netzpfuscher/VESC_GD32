@@ -11,8 +11,8 @@
 
 #define HW_NAME					"MP2-ESC"
 
-#define RSHUNT                  0.00033333
-#define AMPLIFICATION_GAIN      16.00
+#define CURRENT_SHUNT_RES       0.00033333
+#define AMPLIFICATION_GAIN      10.50
 
 //Voltage Dividers
 #define VBUS_R1 1000000.0

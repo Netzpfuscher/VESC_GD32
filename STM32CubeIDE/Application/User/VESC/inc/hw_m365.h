@@ -11,7 +11,7 @@
 
 #define HW_NAME					"GD32_m365"
 
-#define RSHUNT                  0.00200
+#define CURRENT_SHUNT_RES       0.00200
 #define AMPLIFICATION_GAIN      8.00
 
 //Voltage Dividers
