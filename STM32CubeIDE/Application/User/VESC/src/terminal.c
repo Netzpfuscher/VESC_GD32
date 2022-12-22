@@ -291,67 +291,6 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 
 		mempools_free_mcconf(mcconf);
 		mempools_free_mcconf(mcconf_old);
-	} else if (strcmp(argv[0], "measure_linkage_foc") == 0) {
-		if (argc == 2) {
-			float duty = -1.0;
-			sscanf(argv[1], "%f", &duty);
-
-			if (duty > 0.0) {
-				mc_configuration *mcconf = mempools_alloc_mcconf();
-				*mcconf = *mc_interface_get_configuration();
-				mc_configuration *mcconf_old = mempools_alloc_mcconf();
-				*mcconf_old = *mc_interface_get_configuration();
-
-				mcconf->motor_type = MOTOR_TYPE_FOC;
-				mc_interface_set_configuration(mcconf);
-
-				// Disable timeout
-				systime_t tout = timeout_get_timeout_msec();
-				float tout_c = timeout_get_brake_current();
-				KILL_SW_MODE tout_ksw = timeout_get_kill_sw_mode();
-				timeout_reset();
-				timeout_configure(60000, 0.0, KILL_SW_MODE_DISABLED);
-
-				for (int i = 0;i < 100;i++) {
-					mc_interface_set_duty(((float)i / 100.0) * duty);
-					vTaskDelay(MS_TO_TICKS(20));
-				}
-
-				float vq_avg = 0.0;
-				float rpm_avg = 0.0;
-				float samples = 0.0;
-				float iq_avg = 0.0;
-				for (int i = 0;i < 1000;i++) {
-					vq_avg += mcpwm_foc_get_vq();
-					rpm_avg += mc_interface_get_rpm();
-					iq_avg += mc_interface_get_tot_current_directional();
-					samples += 1.0;
-					vTaskDelay(MS_TO_TICKS(1));
-				}
-
-				mc_interface_release_motor();
-				mc_interface_wait_for_motor_release(1.0);
-				mc_interface_set_configuration(mcconf_old);
-
-				mempools_free_mcconf(mcconf);
-				mempools_free_mcconf(mcconf_old);
-
-				// Enable timeout
-				timeout_configure(tout, tout_c, tout_ksw);
-
-				vq_avg /= samples;
-				rpm_avg /= samples;
-				iq_avg /= samples;
-
-				float linkage = (vq_avg - mcconf->foc_motor_r * iq_avg) / RPM2RADPS_f(rpm_avg);
-
-				commands_printf(phandle, "Flux linkage: %.7f\n", (double)linkage);
-			} else {
-				commands_printf(phandle, "Invalid argument(s).\n");
-			}
-		} else {
-			commands_printf(phandle, "This command requires one argument.\n");
-		}
 	} else if (strcmp(argv[0], "measure_linkage_openloop") == 0) {
 		if (argc == 6) {
 			float current = -1.0;
@@ -364,23 +303,50 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 			sscanf(argv[3], "%f", &erpm_per_sec);
 			sscanf(argv[4], "%f", &res);
 			sscanf(argv[5], "%f", &ind);
-
+			commands_printf(phandle, "Measuring flux linkage openloop...");
 			if (current > 0.0 && current <= mc_interface_get_configuration()->l_current_max &&
-					erpm_per_sec > 0.0 && duty > 0.02 && res >= 0.0 && ind >= 0.0) {
-				float linkage, linkage_undriven, undriven_samples;
-				commands_printf(phandle, "Measuring flux linkage...");
-				conf_general_measure_flux_linkage_openloop(current, duty, erpm_per_sec, res, ind,
-						&linkage, &linkage_undriven, &undriven_samples);
-				commands_printf(phandle,
-						"Flux linkage            : %.7f\n"
-						"Flux Linkage (undriven) : %.7f\n"
-						"Undriven samples        : %.1f\n",
-						(double)linkage, (double)linkage_undriven, (double)undriven_samples);
+					erpm_per_sec > 0.0 && duty > 0.02 && duty <= 0.9 && res >= 0.0 && ind >= 0.0) {
+				float linkage = 0.0, linkage_undriven = 0.0, undriven_samples = 0.0;
+				bool result;
+
+				int fault = conf_general_measure_flux_linkage_openloop(current, duty, erpm_per_sec, res, ind,
+																	   &linkage, &linkage_undriven, &undriven_samples, &result);
+				if (fault == FAULT_CODE_NONE) {
+					if (result) {
+						commands_printf(phandle,
+									"Flux linkage            : %.7f\n"
+									"Flux Linkage (undriven) : %.7f\n"
+									"Undriven samples        : %.1f\n",
+									(double)linkage, (double)linkage_undriven, (double)undriven_samples);
+					} else {
+						commands_printf(phandle, "Failed to measure flux linkage");
+					}
+
+				} else {
+					commands_printf(phandle, "Fault occured while measuring flux linkage: %s", mc_interface_fault_to_string(fault));
+					commands_printf(phandle, "For more info type \"faults\" to view all logged faults\n");
+				}
 			} else {
-				commands_printf(phandle, "Invalid argument(s).\n");
+				commands_printf(phandle, "Invalid argument(s).");
+				if (!(current > 0.0 && current <= mc_interface_get_configuration()->l_current_max)) {
+					commands_printf(phandle, "Current must be between 0.0 and %.2f", (double)mc_interface_get_configuration()->l_current_max);
+				}
+				if (!(duty > 0.02 && duty <= 0.9)) {
+					commands_printf(phandle, "Duty must be between 0.02 and 0.9");
+				}
+				if (!(erpm_per_sec > 0.0)) {
+					commands_printf(phandle, "ERPM ramp rate must be greater than 0.0");
+				}
+				if (!(res >= 0.0)) {
+					commands_printf(phandle, "Resistance must be greater than 0.0");
+				}
+				if (!(ind >= 0.0)) {
+					commands_printf(phandle, "Inductance must be greater than 0.0");
+				}
+				commands_printf(phandle, " ");
 			}
 		} else {
-			commands_printf(phandle, "This command requires five arguments.\n");
+			commands_printf(phandle, "This command requires five arguments. [current duty erpm_ramp_per_sec resistance inductance]\n");
 		}
 	} else if (strcmp(argv[0], "foc_state") == 0) {
 		mcpwm_foc_print_state();
@@ -457,7 +423,7 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 
 			if (current >= 0.0 && erpm >= 0.0) {
 				timeout_reset();
-				mcpwm_foc_set_openloop(current, erpm);
+				mcpwm_foc_set_openloop_current(current, erpm);
 			} else {
 				commands_printf(phandle, "Invalid argument(s).\n");
 			}
@@ -484,24 +450,30 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 		if (argc == 2) {
 			float current = -1.0;
 			sscanf(argv[1], "%f", &current);
-
+			commands_printf(phandle, "Detecting sensors for FOC...");
 			if (current > 0.0 && current <= mc_interface_get_configuration()->l_current_max) {
-				int res = conf_general_autodetect_apply_sensors_foc(current, true, true);
+				int res;
+				int fault = conf_general_autodetect_apply_sensors_foc(current, true, true, &res);
 
-				if (res == 0) {
-					commands_printf(phandle, "No sensors found, using sensorless mode.\n");
-				} else if (res == 1) {
-					commands_printf(phandle, "Found hall sensors, using them.\n");
-				} else if (res == 2) {
-					commands_printf(phandle, "Found AS5047 encoder, using it.\n");
+				if (fault == FAULT_CODE_NONE) {
+					if (res == 0) {
+						commands_printf(phandle, "No sensors found, using sensorless mode.\n");
+					} else if (res == 1) {
+						commands_printf(phandle, "Found hall sensors, using them.\n");
+					} else if (res == 2) {
+						commands_printf(phandle, "Found AS5047 encoder, using it.\n");
+					} else {
+						commands_printf(phandle, "Detection error: %d\n", res);
+					}
 				} else {
-					commands_printf(phandle, "Detection error: %d\n", res);
+					commands_printf(phandle, "Fault occured while detecting sensors: %s", mc_interface_fault_to_string(fault));
+					commands_printf(phandle, "For more info type \"faults\" to view all logged faults\n");
 				}
 			} else {
-				commands_printf(phandle, "Invalid argument(s).\n");
+				commands_printf(phandle, "Invalid argument(s). Current must be between 0.0 and %.2f\n", (double)mc_interface_get_configuration()->l_current_max);
 			}
 		} else {
-			commands_printf(phandle, "This command requires one argument.\n");
+			commands_printf(phandle, "This command requires one argument. [current]\n");
 		}
 	} else if (strcmp(argv[0], "rotor_lock_openloop") == 0) {
 		if (argc == 4) {

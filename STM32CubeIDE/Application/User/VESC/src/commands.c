@@ -687,13 +687,6 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 				case COMM_GET_VALUES_SETUP:
 				case COMM_GET_VALUES_SETUP_SELECTIVE: {
 					setup_values val = mc_interface_get_setup_values();
-					val.ah_charge_tot = 0;
-					val.ah_tot = 0;
-					val.current_in_tot = 0;
-					val.current_tot = 0;
-					val.num_vescs = 1;
-					val.wh_charge_tot = 0;
-					val.wh_tot = 0;
 
 					float wh_batt_left = 1.0;
 					float battery_level = mc_interface_get_battery_level(&wh_batt_left);
@@ -1254,7 +1247,8 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 			mc_interface_set_configuration(mcconf);
 
 			uint8_t hall_tab[8];
-			bool res = mcpwm_foc_hall_detect(current, hall_tab);
+			bool res;
+			mcpwm_foc_hall_detect(current, hall_tab, &res);
 			mc_interface_set_configuration(mcconf_old);
 
 			ind = 0;
@@ -1293,16 +1287,21 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 		}
 
 		float linkage, linkage_undriven, undriven_samples;
-		bool res = conf_general_measure_flux_linkage_openloop(current, duty,
-				erpm_per_sec, resistance, inductance,
-				&linkage, &linkage_undriven, &undriven_samples);
+		bool res;
+		int fault = conf_general_measure_flux_linkage_openloop(current, duty,
+															   erpm_per_sec, resistance, inductance,
+															   &linkage, &linkage_undriven, &undriven_samples, &res);
 
-		if (undriven_samples > 60) {
-			linkage = linkage_undriven;
-		}
-
-		if (!res) {
+		if (fault != FAULT_CODE_NONE) {
 			linkage = 0.0;
+		} else {
+			if (undriven_samples > 60) {
+				linkage = linkage_undriven;
+			}
+
+			if (!res) {
+				linkage = 0.0;
+			}
 		}
 
 		ind = 0;

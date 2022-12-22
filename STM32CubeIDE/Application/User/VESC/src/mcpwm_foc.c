@@ -610,14 +610,9 @@ void mcpwm_foc_set_handbrake(float current) {
  *
  * @param rpm
  * The RPM to use.
+ *
  */
-void mcpwm_foc_set_openloop(float current, float rpm) {
-
-	// Check for an active fault
-	if (mc_interface_get_fault() != FAULT_CODE_NONE) {
-		return;
-	}
-
+void mcpwm_foc_set_openloop_current(float current, float rpm) {
 	utils_truncate_number(&current, -get_motor_now()->m_conf->l_current_max * get_motor_now()->m_conf->l_current_max_scale,
 						  get_motor_now()->m_conf->l_current_max * get_motor_now()->m_conf->l_current_max_scale);
 
@@ -1598,13 +1593,16 @@ bool mcpwm_foc_beep(float freq, float time, float voltage) {
  * @param hall_table
  * Table to store the result to.
  *
- * @return
+ * @result
  * true: Success
  * false: Something went wrong
+ *
+ * @return
+ * The fault code
  */
-bool mcpwm_foc_hall_detect(float current, uint8_t *hall_table) {
+int mcpwm_foc_hall_detect(float current, uint8_t *hall_table, bool *result) {
 	volatile motor_all_state_t *motor = get_motor_now();
-
+	int fault = FAULT_CODE_NONE;
 	mc_interface_lock();
 
 	motor->m_phase_override = true;
@@ -1628,9 +1626,15 @@ bool mcpwm_foc_hall_detect(float current, uint8_t *hall_table) {
 	// Lock the motor
 	motor->m_phase_now_override = 0;
 
+	*result = false;
+
 	for (int i = 0;i < 1000;i++) {
 		motor->m_id_set = (float)i * current / 1000.0;
-		vTaskDelay(MS_TO_TICKS(1));
+		fault = mc_interface_get_fault();
+		if (fault != FAULT_CODE_NONE) {
+			goto exit_hall_detect;
+		}
+		chThdSleepMilliseconds(1);
 	}
 
 	float sin_hall[8];
@@ -1644,7 +1648,11 @@ bool mcpwm_foc_hall_detect(float current, uint8_t *hall_table) {
 	for (int i = 0;i < 3;i++) {
 		for (int j = 0;j < 360;j++) {
 			motor->m_phase_now_override = DEG2RAD_f(j);
-			vTaskDelay(MS_TO_TICKS(5));
+			fault = mc_interface_get_fault();
+			if (fault != FAULT_CODE_NONE) {
+				goto exit_hall_detect;
+			}
+			chThdSleepMilliseconds(5);
 
 			int hall = utils_read_hall(motor != &m_motor_1, motor->m_conf->m_hall_extra_samples);
 			float s, c;
@@ -1659,7 +1667,11 @@ bool mcpwm_foc_hall_detect(float current, uint8_t *hall_table) {
 	for (int i = 0;i < 3;i++) {
 		for (int j = 360;j >= 0;j--) {
 			motor->m_phase_now_override = DEG2RAD_f(j);
-			vTaskDelay(MS_TO_TICKS(5));
+			fault = mc_interface_get_fault();
+			if (fault != FAULT_CODE_NONE) {
+				goto exit_hall_detect;
+			}
+			chThdSleepMilliseconds(5);
 
 			int hall = utils_read_hall(motor != &m_motor_1, motor->m_conf->m_hall_extra_samples);
 			float s, c;
@@ -1669,18 +1681,6 @@ bool mcpwm_foc_hall_detect(float current, uint8_t *hall_table) {
 			hall_iterations[hall]++;
 		}
 	}
-
-	motor->m_id_set = 0.0;
-	motor->m_iq_set = 0.0;
-	motor->m_phase_override = false;
-	motor->m_control_mode = CONTROL_MODE_NONE;
-	motor->m_state = MC_STATE_OFF;
-	stop_pwm_hw((motor_all_state_t*)motor);
-
-	motor->m_conf->foc_mtpa_mode = mtpa_old;
-
-	// Enable timeout
-	timeout_configure(tout, tout_c, tout_ksw);
 
 	int fails = 0;
 	for(int i = 0;i < 8;i++) {
@@ -1693,10 +1693,20 @@ bool mcpwm_foc_hall_detect(float current, uint8_t *hall_table) {
 			fails++;
 		}
 	}
+	*result = (fails == 2);
 
+	exit_hall_detect:
+	motor->m_id_set = 0.0;
+	motor->m_iq_set = 0.0;
+	motor->m_phase_override = false;
+	motor->m_control_mode = CONTROL_MODE_NONE;
+	motor->m_state = MC_STATE_OFF;
+	stop_pwm_hw((motor_all_state_t*)motor);
+	motor->m_conf->foc_mtpa_mode = mtpa_old;
+	timeout_configure(tout, tout_c, tout_ksw);
 	mc_interface_unlock();
 
-	return fails == 2;
+	return fault;
 }
 
 /**
