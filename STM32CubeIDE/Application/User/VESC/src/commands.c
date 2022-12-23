@@ -1193,16 +1193,20 @@ void command_block_call( void * pvParameter1, uint32_t arg ){
 		uint8_t buffer[PACKET_SIZE(20)];
 		uint8_t * send_buffer = buffer + PACKET_HEADER;
 
+		// Lower f_zv means less dead time distortion and higher possible current
+		// when measuring inductance on high-inductance motors.
+		mcconf->foc_f_zv = 10000.0;
 		mcconf->motor_type = MOTOR_TYPE_FOC;
 		mc_interface_set_configuration(mcconf);
 
 		float r = 0.0;
 		float l = 0.0;
 		float ld_lq_diff = 0.0;
-		bool res = mcpwm_foc_measure_res_ind(&r, &l, &ld_lq_diff);
+
+		int fault = mcpwm_foc_measure_res_ind(&r, &l, &ld_lq_diff);
 		mc_interface_set_configuration(mcconf_old);
 
-		if (!res) {
+		if (fault != FAULT_CODE_NONE) {
 			r = 0.0;
 			l = 0.0;
 		}

@@ -1170,13 +1170,17 @@ float mcpwm_foc_get_mod_beta_measured(void) {
  * still be applied after returning. Setting this to false is useful if you want
  * to run this function again right away, without stopping the motor in between.
  *
+ * @param resistance
+ * The calculated motor resistance
+ *
  * @return
- * The calculated motor resistance.
+ * The fault code.
  */
-float mcpwm_foc_measure_resistance(float current, int samples, bool stop_after) {
+int mcpwm_foc_measure_resistance(float current, int samples, bool stop_after, float *resistance) {
 	mc_interface_lock();
 
 	volatile motor_all_state_t *motor = get_motor_now();
+	int fault = FAULT_CODE_NONE;
 
 	motor->m_phase_override = true;
 	motor->m_phase_now_override = 0.0;
@@ -1194,8 +1198,9 @@ float mcpwm_foc_measure_resistance(float current, int samples, bool stop_after) 
 
 	// Ramp up the current slowly
 	while (fabsf(motor->m_iq_set - current) > 0.001) {
-		utils_step_towards((float*)&motor->m_iq_set, current, fabsf(current) / 500.0);		
-		if (mc_interface_get_fault() != FAULT_CODE_NONE) {
+		utils_step_towards((float*)&motor->m_iq_set, current, fabsf(current) / 200.0);
+		fault = mc_interface_get_fault();
+		if (fault != FAULT_CODE_NONE) {
 			motor->m_id_set = 0.0;
 			motor->m_iq_set = 0.0;
 			motor->m_phase_override = false;
@@ -1206,13 +1211,13 @@ float mcpwm_foc_measure_resistance(float current, int samples, bool stop_after) 
 			timeout_configure(tout, tout_c, tout_ksw);
 			mc_interface_unlock();
 
-			return 0.0;
+			return fault;
 		}
-		vTaskDelay(MS_TO_TICKS(1));
+		chThdSleepMilliseconds(1);
 	}
 
 	// Wait for the current to rise and the motor to lock.
-	vTaskDelay(MS_TO_TICKS(100));
+	chThdSleepMilliseconds(50);
 
 	// Sample
 	motor->m_samples.avg_current_tot = 0.0;
@@ -1221,14 +1226,14 @@ float mcpwm_foc_measure_resistance(float current, int samples, bool stop_after) 
 
 	int cnt = 0;
 	while (motor->m_samples.sample_num < samples) {
-		vTaskDelay(MS_TO_TICKS(1));
+		chThdSleepMilliseconds(1);
 		cnt++;
 		// Timeout
 		if (cnt > 10000) {
 			break;
 		}
-
-		if (mc_interface_get_fault() != FAULT_CODE_NONE) {
+		fault = mc_interface_get_fault();
+		if (fault != FAULT_CODE_NONE) {
 			motor->m_id_set = 0.0;
 			motor->m_iq_set = 0.0;
 			motor->m_phase_override = false;
@@ -1239,7 +1244,7 @@ float mcpwm_foc_measure_resistance(float current, int samples, bool stop_after) 
 			timeout_configure(tout, tout_c, tout_ksw);
 			mc_interface_unlock();
 
-			return 0.0;
+			return fault;
 		}
 	}
 
@@ -1260,8 +1265,11 @@ float mcpwm_foc_measure_resistance(float current, int samples, bool stop_after) 
 	timeout_configure(tout, tout_c, tout_ksw);
 	mc_interface_unlock();
 
-	return voltage_avg / current_avg;
+	*resistance = voltage_avg / current_avg;
+
+	return fault;
 }
+
 
 /**
  * Measure the motor inductance with short voltage pulses.
@@ -1275,11 +1283,15 @@ float mcpwm_foc_measure_resistance(float current, int samples, bool stop_after) 
  * @param
  * The current that was used for this measurement.
  *
- * @return
+ * @inductance
  * The average d and q axis inductance in uH.
+ *
+ * @return
+ * The fault code
  */
-float mcpwm_foc_measure_inductance(float duty, int samples, float *curr, float *ld_lq_diff) {
+int mcpwm_foc_measure_inductance(float duty, int samples, float *curr, float *ld_lq_diff, float *inductance) {
 	volatile motor_all_state_t *motor = get_motor_now();
+	int fault = FAULT_CODE_NONE;
 
 	mc_foc_sensor_mode sensor_mode_old = motor->m_conf->foc_sensor_mode;
 	float f_zv_old = motor->m_conf->foc_f_zv;
@@ -1311,15 +1323,15 @@ float mcpwm_foc_measure_inductance(float duty, int samples, float *curr, float *
 
 	mcpwm_foc_set_configuration(motor->m_conf);
 
-	vTaskDelay(MS_TO_TICKS(1));
+	chThdSleepMilliseconds(1);
 
 	timeout_reset();
 	mcpwm_foc_set_duty(0.0);
-	vTaskDelay(MS_TO_TICKS(1));
+	chThdSleepMilliseconds(1);
 
 	int ready_cnt = 0;
 	while (!motor->m_hfi.ready) {
-		vTaskDelay(MS_TO_TICKS(1));
+		chThdSleepMilliseconds(1);
 		ready_cnt++;
 		if (ready_cnt > 100) {
 			break;
@@ -1336,7 +1348,11 @@ float mcpwm_foc_measure_inductance(float duty, int samples, float *curr, float *
 	float iterations = 0.0;
 
 	for (int i = 0;i < (samples / 10);i++) {
-		if (mc_interface_get_fault() != FAULT_CODE_NONE) {
+		timeout_reset();
+		mcpwm_foc_set_duty(0.0);
+
+		fault = mc_interface_get_fault();
+		if (fault != FAULT_CODE_NONE) {
 			motor->m_id_set = 0.0;
 			motor->m_iq_set = 0.0;
 			motor->m_control_mode = CONTROL_MODE_NONE;
@@ -1357,12 +1373,10 @@ float mcpwm_foc_measure_inductance(float duty, int samples, float *curr, float *
 
 			mc_interface_unlock();
 
-			return 0.0;
+			return fault;
 		}
 
-		timeout_reset();
-		mcpwm_foc_set_duty(0.0);
-		vTaskDelay(MS_TO_TICKS(10));
+		chThdSleepMilliseconds(10);
 
 		float real_bin0, imag_bin0;
 		float real_bin2, imag_bin2;
@@ -1413,7 +1427,8 @@ float mcpwm_foc_measure_inductance(float duty, int samples, float *curr, float *
 		*ld_lq_diff = (ld_lq_diff_sum / iterations) * 1e6 * ind_scale_factor;
 	}
 
-	return (l_sum / iterations) * 1e6 * ind_scale_factor;
+	*inductance = (l_sum / iterations) * 1e6 * ind_scale_factor;
+	return fault;
 }
 
 /**
@@ -1430,15 +1445,21 @@ float mcpwm_foc_measure_inductance(float duty, int samples, float *curr, float *
  * @param *curr
  * The current that was used for this measurement.
  *
- * @return
+ * @inductance
  * The average d and q axis inductance in uH.
+ *
+ * @return
+ * The fault code
  */
-float mcpwm_foc_measure_inductance_current(float curr_goal, int samples, float *curr, float *ld_lq_diff) {
+int mcpwm_foc_measure_inductance_current(float curr_goal, int samples, float *curr, float *ld_lq_diff, float *inductance) {
+	int fault = FAULT_CODE_NONE;
 	float duty_last = 0.0;
 	for (float i = 0.02;i < 0.5;i *= 1.5) {
+		utils_truncate_number_abs(&i, 0.6);
 		float i_tmp;
-		if (mcpwm_foc_measure_inductance(i, 10, &i_tmp, 0) == 0.0) {
-			return 0.0;
+		fault = mcpwm_foc_measure_inductance(i, 10, &i_tmp, 0, 0);
+		if (fault != FAULT_CODE_NONE) {
+			return fault;
 		}
 
 		duty_last = i;
@@ -1446,9 +1467,8 @@ float mcpwm_foc_measure_inductance_current(float curr_goal, int samples, float *
 			break;
 		}
 	}
-
-	float ind = mcpwm_foc_measure_inductance(duty_last, samples, curr, ld_lq_diff);
-	return ind;
+	fault = mcpwm_foc_measure_inductance(duty_last, samples, curr, ld_lq_diff, inductance);
+	return fault;
 }
 
 /**
@@ -1464,11 +1484,11 @@ float mcpwm_foc_measure_inductance_current(float curr_goal, int samples, float *
  * The measured difference in D axis and Q axis inductance.
  *
  * @return
- * True if the measurement succeeded, false otherwise.
+ * The fault code
  */
-bool mcpwm_foc_measure_res_ind(float *res, float *ind, float *ld_lq_diff) {
+int mcpwm_foc_measure_res_ind(float *res, float *ind, float *ld_lq_diff) {
 	volatile motor_all_state_t *motor = get_motor_now();
-	bool result = false;
+	int fault = FAULT_CODE_NONE;
 
 	const float kp_old = motor->m_conf->foc_current_kp;
 	const float ki_old = motor->m_conf->foc_current_ki;
@@ -1479,11 +1499,10 @@ bool mcpwm_foc_measure_res_ind(float *res, float *ind, float *ld_lq_diff) {
 
 	float i_last = 0.0;
 	for (float i = 2.0;i < (motor->m_conf->l_current_max / 2.0);i *= 1.5) {
-		float r_tmp = mcpwm_foc_measure_resistance(i, 20, false);
-		if (r_tmp == 0.0) {
-			motor->m_conf->foc_current_kp = kp_old;
-			motor->m_conf->foc_current_ki = ki_old;
-			return false;
+		float r_tmp = 0.0;
+		fault = mcpwm_foc_measure_resistance(i, 20, false, &r_tmp);
+		if (fault != FAULT_CODE_NONE || r_tmp == 0.0) {
+			goto exit_measure_res_ind;
 		}
 		if (i > (1.0 / r_tmp)) {
 			i_last = i;
@@ -1499,21 +1518,21 @@ bool mcpwm_foc_measure_res_ind(float *res, float *ind, float *ld_lq_diff) {
 	i_last = (motor->m_conf->l_current_max / 2.0);
 #endif
 
-	*res = mcpwm_foc_measure_resistance(i_last, 200, true);
-	if (*res != 0.0) {
+	fault = mcpwm_foc_measure_resistance(i_last, 200, true, res);
+	if (fault == FAULT_CODE_NONE && *res != 0.0) {
 		motor->m_conf->foc_motor_r = *res;
-		*ind = mcpwm_foc_measure_inductance_current(i_last, 200, 0, ld_lq_diff);
-		if (*ind != 0.0) {
-			result = true;
-		}
+		mcpwm_foc_set_current(0.0);
+		chThdSleepMilliseconds(10);
+		fault = mcpwm_foc_measure_inductance_current(i_last, 200, 0, ld_lq_diff, ind);
 	}
 
+	exit_measure_res_ind:
 	motor->m_conf->foc_current_kp = kp_old;
 	motor->m_conf->foc_current_ki = ki_old;
 	motor->m_conf->foc_motor_r = res_old;
-
-	return result;
+	return fault;
 }
+
 
 bool mcpwm_foc_beep(float freq, float time, float voltage) {
 	volatile motor_all_state_t *motor = get_motor_now();

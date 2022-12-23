@@ -221,29 +221,34 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 			*mcconf = *mc_interface_get_configuration();
 			mc_configuration *mcconf_old = mempools_alloc_mcconf();
 			*mcconf_old = *mc_interface_get_configuration();
-
+			commands_printf(phandle, "Measuring resistance...");
 			if (current > 0.0 && current <= mcconf->l_current_max) {
 				mcconf->motor_type = MOTOR_TYPE_FOC;
 				mc_interface_set_configuration(mcconf);
-
-				commands_printf(phandle, "Resistance: %.6f ohm\n", (double)mcpwm_foc_measure_resistance(current, 2000, true));
-
+				float tmp_r = 0.0;
+				int fault = mcpwm_foc_measure_resistance(current, 2000, true, &tmp_r);
+				if(fault == FAULT_CODE_NONE) {
+					commands_printf(phandle, "Resistance: %.6f ohm\n", (double)tmp_r);
+				} else {
+					commands_printf(phandle, "Resistance measurement failed due to fault: %s", mc_interface_fault_to_string(fault));
+					commands_printf(phandle, "For more info type \"faults\" to view all logged faults\n");
+				}
 				mc_interface_set_configuration(mcconf_old);
 			} else {
-				commands_printf(phandle, "Invalid argument(s).\n");
+				commands_printf(phandle, "Invalid argument(s). Current must be between 0.0 and %.2f\n", (double)mcconf->l_current_max);
 			}
 
 			mempools_free_mcconf(mcconf);
 			mempools_free_mcconf(mcconf_old);
 		} else {
-			commands_printf(phandle, "This command requires one argument.\n");
+			commands_printf(phandle, "This command requires one argument. [current]\n");
 		}
 	} else if (strcmp(argv[0], "measure_ind") == 0) {
 		if (argc == 2) {
 			float duty = -1.0;
 			sscanf(argv[1], "%f", &duty);
-
-			if (duty > 0.0 && duty < 0.9) {
+			commands_printf(phandle, "Measuring inductance...");
+			if (duty > 0.0 && duty <= 0.9) {
 				mc_configuration *mcconf = mempools_alloc_mcconf();
 				*mcconf = *mc_interface_get_configuration();
 				mc_configuration *mcconf_old = mempools_alloc_mcconf();
@@ -252,20 +257,24 @@ void terminal_process_string(char *str, PACKET_STATE_t * phandle) {
 				mcconf->motor_type = MOTOR_TYPE_FOC;
 				mc_interface_set_configuration(mcconf);
 
-				float curr, ld_lq_diff;
-				float ind = mcpwm_foc_measure_inductance(duty, 400, &curr, &ld_lq_diff);
-				commands_printf(phandle, "Inductance: %.2f uH, ld_lq_diff: %.2f uH (%.2f A)\n",
-						(double)ind, (double)ld_lq_diff, (double)curr);
-
+				float curr, ld_lq_diff, ind;
+				int fault = mcpwm_foc_measure_inductance(duty, 400, &curr, &ld_lq_diff, &ind);
+				if(fault == FAULT_CODE_NONE) {
+					commands_printf(phandle, "Inductance: %.2f uH, ld_lq_diff: %.2f uH (%.2f A)\n",
+									(double)ind, (double)ld_lq_diff, (double)curr);
+				} else {
+					commands_printf(phandle, "Inductance measurement failed with fault: %s", mc_interface_fault_to_string(fault));
+					commands_printf(phandle, "For more info type \"faults\" to view all logged faults\n");
+				}
 				mc_interface_set_configuration(mcconf_old);
 
 				mempools_free_mcconf(mcconf);
 				mempools_free_mcconf(mcconf_old);
 			} else {
-				commands_printf(phandle, "Invalid argument(s).\n");
+				commands_printf(phandle, "Invalid argument. Duty must be between 0.0 and 0.9 \n");
 			}
 		} else {
-			commands_printf(phandle, "This command requires one argument.\n");
+			commands_printf(phandle, "This command requires one argument. [duty]\n");
 		}
 	} else if (strcmp(argv[0], "measure_res_ind") == 0) {
 		mc_configuration *mcconf = mempools_alloc_mcconf();

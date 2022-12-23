@@ -241,12 +241,14 @@ void conf_general_calc_apply_foc_cc_kp_ki_gain(mc_configuration *mcconf, float t
 	mcconf->foc_observer_gain = gain * 1e6;
 }
 
-static bool measure_r_l_imax(float current_min, float current_max,
-		float max_power_loss, float *r, float *l, float *ld_lq_diff, float *i_max) {
+static int measure_r_l_imax(float current_min, float current_max,
+							float max_power_loss, float *r, float *l, float *ld_lq_diff, float *i_max) {
 	float current_start = current_max / 50;
 	if (current_start < (current_min * 1.1)) {
 		current_start = current_min * 1.1;
 	}
+
+	int fault = FAULT_CODE_NONE;
 
 	mc_configuration *mcconf = mempools_alloc_mcconf();
 	*mcconf = *mc_interface_get_configuration();
@@ -255,12 +257,13 @@ static bool measure_r_l_imax(float current_min, float current_max,
 
 	float i_last = 0.0;
 	for (float i = current_start;i < current_max;i *= 1.5) {
-		float res_tmp = mcpwm_foc_measure_resistance(i, 5, false);
+		float res_tmp = 0.0;
+		fault = mcpwm_foc_measure_resistance(i, 5, false, &res_tmp);
 		i_last = i;
 
-		if (res_tmp == 0.0) {
+		if (fault != FAULT_CODE_NONE) {
 			mempools_free_mcconf(mcconf);
-			return false;
+			return fault;
 		}
 
 		if ((i * i * res_tmp * 1.5) >= (max_power_loss / 5.0)) {
@@ -268,21 +271,18 @@ static bool measure_r_l_imax(float current_min, float current_max,
 		}
 	}
 
-	*r = mcpwm_foc_measure_resistance(i_last, 100, true);
-	if (*r == 0.0) {
+	fault = mcpwm_foc_measure_resistance(i_last, 100, true, r);
+	if (fault != FAULT_CODE_NONE) {
 		mempools_free_mcconf(mcconf);
-		return false;
+		return fault;
 	}
 
 	mcconf->foc_motor_r = *r;
 	mc_interface_set_configuration(mcconf);
 
-	bool result = true;
-	*l = mcpwm_foc_measure_inductance_current(i_last, 100, 0, ld_lq_diff) * 1e-6;
-	if (*l == 0.0) {
-		result = false;
-	}
+	fault = mcpwm_foc_measure_inductance_current(i_last, 100, 0, ld_lq_diff, l);
 
+	*l *= 1e-6;
 	*ld_lq_diff *= 1e-6;
 	*i_max = sqrtf(max_power_loss / *r / 1.5);
 	utils_truncate_number(i_max, HW_LIM_CURRENT);
@@ -291,7 +291,7 @@ static bool measure_r_l_imax(float current_min, float current_max,
 	mc_interface_set_configuration(mcconf);
 	mempools_free_mcconf(mcconf);
 
-	return result;
+	return fault;
 }
 
 static bool wait_fault(int timeout_ms) {
