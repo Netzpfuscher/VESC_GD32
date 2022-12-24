@@ -19,12 +19,11 @@
 #include "platform_mutex.h"
 
 bool mutex_init(mutex_t *m) {
+  if (*m != NULL)
+	return true;
   *m = xSemaphoreCreateMutex();
-  if (*m != NULL){
-	  xSemaphoreGive(*m);
-	  return true;
-  }
-
+  if (*m != NULL)
+    return true;
   return false;
 }
 

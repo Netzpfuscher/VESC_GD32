@@ -531,8 +531,9 @@ void commands_process_packet(unsigned char *data, unsigned int len, PACKET_STATE
 						vTaskDelay(pdMS_TO_TICKS(200));
 
 						int32_t ind = 0;
-						uint8_t send_buffer[50];
-						send_buffer[ind++] = packet_id;
+						uint8_t send_buffer[PACKET_SIZE(10)];
+						uint8_t * buffer = send_buffer + PACKET_HEADER;
+						buffer[ind++] = packet_id;
 						packet_send_packet(send_buffer, ind, phandle);
 					} else {
 						commands_printf(phandle, "Warning: Could not set appconf due to wrong signature");
