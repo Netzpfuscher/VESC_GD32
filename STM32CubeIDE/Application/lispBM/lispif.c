@@ -165,7 +165,7 @@ void lispif_process_cmd(unsigned char *data, unsigned int len, PACKET_STATE_t * 
 		}
 
 		int32_t ind = 0;
-		uint8_t send_buffer[PACKET_SIZE(20)];
+		uint8_t send_buffer[PACKET_SIZE(50)];
 		uint8_t * buffer = send_buffer + PACKET_HEADER;
 		buffer[ind++] = packet_id;
 		buffer[ind++] = ok;
@@ -345,6 +345,7 @@ void lispif_process_cmd(unsigned char *data, unsigned int len, PACKET_STATE_t * 
 			} else if (strncmp(str, ":undef", 6) == 0) {
 				lbm_pause_eval();
 				while(lbm_get_eval_state() != EVAL_CPS_STATE_PAUSED) {
+					lbm_pause_eval();
 					sleep_callback(1);
 				}
 				char *sym = str + 7;
@@ -493,15 +494,15 @@ void lispif_process_cmd(unsigned char *data, unsigned int len, PACKET_STATE_t * 
 			if (ch_res == CHANNEL_SUCCESS) {
 				ind++;
 				written++;
-				timeout = 0;
+				timeout = 1500;
 			} else if (ch_res == CHANNEL_READER_CLOSED) {
 				break;
 			} else {
 				chThdSleepMilliseconds(1);
-				timeout--;
 				if (timeout == 0) {
 					break;
 				}
+				timeout--;
 			}
 		}
 
@@ -557,6 +558,7 @@ bool lispif_restart(bool print, bool load_code) {
 	if(code_len==-1) code_len=0;
 
 	if (!load_code || (code_data != 0 && code_len > 0)) {
+		lispif_disable_all_events();					  
 		if (!lisp_thd_running) {
 			lbm_init(heap, HEAP_SIZE,
 					gc_stack_storage, GC_STACK_SIZE,

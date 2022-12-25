@@ -337,6 +337,9 @@ void adc_thread(void * arg){
 		if (app_is_output_disabled()) {
 			continue;
 		}
+		if(timeout_has_timeout()){
+			continue;
+		}
 
 		switch (config.ctrl_type) {
 		case ADC_CTRL_TYPE_CURRENT_REV_CENTER:
@@ -628,7 +631,6 @@ void adc_thread(void * arg){
 //						current_out = utils_map(diff, 0.0, config.tc_max_diff, current_rel, 0.0);
 //					}
 //				}
-
 				if (is_reverse) {
 					mc_interface_set_current_rel(-current_out);
 				} else {
